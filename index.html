@@ -32,6 +32,8 @@
   .btn.secondary{background:var(--panel2);color:var(--text);border:1px solid var(--border);}
   .btn:disabled{opacity:.5;}
   table{width:100%;border-collapse:collapse;font-size:.85rem;}
+  .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  .table-scroll table{white-space:nowrap;}
   th,td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--border);}
   th{color:var(--muted);font-weight:600;font-size:.75rem;text-transform:uppercase;letter-spacing:.03em;}
   tr.me{background:rgba(255,138,61,.08);}
@@ -447,7 +449,7 @@ function renderRanking(){
   const el = document.getElementById('tab-ranking');
   if(!PARTICIPANTS.length){ el.innerHTML = '<div class="empty">Todavía no hay participantes cargados.</div>'; return; }
   const rows = PARTICIPANTS.map(p=>({p, r:calcPts(p)})).sort((a,b)=>b.r.total-a.r.total);
-  let html = '<div class="card"><h2>Clasificación general</h2><table><thead><tr><th>#</th><th>Participante</th><th>Liga</th><th>Elim.</th><th>Top8</th><th>Bonus</th><th style="text-align:right">Total</th></tr></thead><tbody>';
+  let html = '<div class="card"><h2>Clasificación general</h2><div class="table-scroll"><table><thead><tr><th>#</th><th>Participante</th><th>Liga</th><th>Elim.</th><th>Top8</th><th>Bonus</th><th style="text-align:right">Total</th></tr></thead><tbody>';
   rows.forEach((row,i)=>{
     const medal = i===0?'medal-1':i===1?'medal-2':i===2?'medal-3':'';
     html += `<tr class="${row.p.id===currentUserId?'me':''}">
@@ -460,7 +462,7 @@ function renderRanking(){
       <td class="pts">${row.r.total}</td>
     </tr>`;
   });
-  html += '</tbody></table></div>';
+  html += '</tbody></table></div></div>';
   el.innerHTML = html;
 }
 
