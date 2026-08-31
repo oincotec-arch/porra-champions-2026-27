@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Porra Champions League 2026/27</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0d1117">
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --panel2:#1c2129; --border:#2a313c;
+    --orange:#ff8a3d; --orange2:#ffb35c; --text:#e6edf3; --muted:#8b949e;
+    --green:#3fb950; --red:#f85149; --gold:#ffd166;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);padding-bottom:70px;}
+  header{position:sticky;top:0;z-index:20;background:linear-gradient(180deg,#12161d,#0d1117);border-bottom:1px solid var(--border);padding:14px 16px 10px;}
+  header h1{margin:0;font-size:1.1rem;display:flex;align-items:center;gap:8px;}
+  header h1 .logo{width:26px;height:26px;border-radius:6px;background:linear-gradient(135deg,var(--orange),var(--orange2));display:inline-flex;align-items:center;justify-content:center;font-weight:800;color:#1a1200;font-size:.8rem;}
+  header .sub{color:var(--muted);font-size:.75rem;margin-top:2px;}
+  nav{display:flex;gap:6px;position:sticky;top:56px;z-index:19;background:var(--bg);padding:8px 10px;border-bottom:1px solid var(--border);overflow-x:auto;}
+  nav button{flex:1;white-space:nowrap;background:transparent;border:1px solid var(--border);color:var(--muted);padding:9px 10px;border-radius:10px;font-size:.82rem;font-weight:600;cursor:pointer;}
+  nav button.active{background:var(--orange);color:#1a1200;border-color:var(--orange);}
+  main{padding:14px;max-width:760px;margin:0 auto;}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:12px;}
+  .muted{color:var(--muted);}
+  h2{font-size:1rem;margin:0 0 10px;color:var(--orange2);}
+  h3{font-size:.88rem;margin:16px 0 8px;color:var(--text);border-top:1px solid var(--border);padding-top:12px;}
+  select,input[type=text],input[type=number]{background:var(--panel2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px 10px;font-size:.9rem;width:100%;}
+  .row{display:flex;gap:8px;align-items:center;}
+  .btn{background:var(--orange);color:#1a1200;border:none;border-radius:10px;padding:11px 16px;font-weight:700;font-size:.9rem;cursor:pointer;}
+  .btn.secondary{background:var(--panel2);color:var(--text);border:1px solid var(--border);}
+  .btn:disabled{opacity:.5;}
+  table{width:100%;border-collapse:collapse;font-size:.85rem;}
+  th,td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--border);}
+  th{color:var(--muted);font-weight:600;font-size:.75rem;text-transform:uppercase;letter-spacing:.03em;}
+  tr.me{background:rgba(255,138,61,.08);}
+  .pos{width:26px;color:var(--muted);font-variant-numeric:tabular-nums;}
+  .pos.medal-1{color:var(--gold);font-weight:800;}
+  .pos.medal-2{color:#d9d9d9;font-weight:800;}
+  .pos.medal-3{color:#cd8a4e;font-weight:800;}
+  .pts{font-weight:800;color:var(--orange2);text-align:right;}
+  .jornada-title{font-weight:700;margin:14px 0 8px;color:var(--orange2);font-size:.9rem;}
+  .match-row{display:grid;grid-template-columns:1fr 46px 46px 1fr;gap:6px;align-items:center;padding:8px 4px;border-bottom:1px solid var(--border);font-size:.85rem;}
+  .match-row input{width:100%;text-align:center;padding:6px 2px;}
+  .match-row .team{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .match-row .team.home{text-align:right;}
+  .match-meta{font-size:.7rem;color:var(--muted);text-align:center;margin-bottom:2px;}
+  .result-badge{font-size:.72rem;padding:2px 6px;border-radius:6px;background:var(--panel2);color:var(--muted);}
+  .result-badge.exact{background:rgba(63,185,80,.18);color:var(--green);}
+  .result-badge.diff{background:rgba(255,209,102,.18);color:var(--gold);}
+  .result-badge.sign{background:rgba(255,138,61,.18);color:var(--orange2);}
+  .top8-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+  .team-chip{display:flex;align-items:center;gap:8px;background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:.83rem;cursor:pointer;}
+  .team-chip input{width:auto;}
+  .team-chip.checked{border-color:var(--orange);background:rgba(255,138,61,.1);}
+  .counter{font-size:.78rem;color:var(--muted);margin-top:6px;}
+  .tag{display:inline-block;font-size:.68rem;padding:2px 7px;border-radius:20px;background:var(--panel2);color:var(--muted);margin-left:6px;}
+  .save-bar{position:fixed;left:0;right:0;bottom:0;background:#12161d;border-top:1px solid var(--border);padding:10px 14px;display:flex;gap:10px;justify-content:center;z-index:30;}
+  .save-bar .btn{flex:1;max-width:420px;}
+  .toast{position:fixed;bottom:78px;left:50%;transform:translateX(-50%);background:var(--green);color:#06210b;padding:9px 16px;border-radius:10px;font-weight:700;font-size:.85rem;z-index:40;opacity:0;transition:opacity .3s;pointer-events:none;}
+  .toast.show{opacity:1;}
+  .empty{color:var(--muted);text-align:center;padding:30px 10px;font-size:.9rem;}
+  .bonus-grid{display:grid;grid-template-columns:1fr;gap:10px;}
+  label.field-label{font-size:.78rem;color:var(--muted);margin-bottom:4px;display:block;}
+  .ko-section{opacity:.55;}
+  .ko-section.unlocked{opacity:1;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1><span class="logo">UCL</span> Porra Champions League 2026/27</h1>
+  <div class="sub" id="headerSub">Cargando...</div>
+</header>
+
+<nav>
+  <button data-tab="ranking" class="active">Ranking</button>
+  <button data-tab="partidos">Partidos</button>
+  <button data-tab="predicciones">Predicciones</button>
+  <button data-tab="miporra">Mi Porra</button>
+</nav>
+
+<main>
+  <section id="tab-ranking"></section>
+  <section id="tab-partidos" style="display:none"></section>
+  <section id="tab-predicciones" style="display:none"></section>
+  <section id="tab-miporra" style="display:none"></section>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============ CONFIG ============ */
+// Rellena aquí la URL de tu Web App de Apps Script cuando la publiques.
+const API_URL = 'https://script.google.com/macros/s/AKfycbxzsWMoSbA_C5DAmvbsKqjf45I7z4s-IDhPvQ4qg0sQtuQHZRc-_RIZ4CAGYCo3-P43/exec';
+
+
+/* ============ DATOS: EQUIPOS Y CALENDARIO FASE DE LIGA ============ */
+const TEAMS = [
+  'AEK Athens',
+  'Arsenal',
+  'Aston Villa',
+  'Atlético Madrid',
+  'B. Dortmund',
+  'Barcelona',
+  'Bayern München',
+  'Bodø/Glimt',
+  'Club Brugge',
+  'Como',
+  'Fenerbahçe',
+  'Feyenoord',
+  'Galatasaray',
+  'Inter',
+  'LASK',
+  'Leipzig',
+  'Lens',
+  'Lille',
+  'Liverpool',
+  'Man City',
+  'Man Utd',
+  'Napoli',
+  'PSV',
+  'Paris',
+  'Porto',
+  'Real Betis',
+  'Real Madrid',
+  'Roma',
+  'Sabah',
+  'Shakhtar',
+  'Slavia Praha',
+  'Slovan Bratislava',
+  'Sporting CP',
+  'Stuttgart',
+  'Viking',
+  'Villarreal'
+];
+
+const MATCHES = [
+  {id:'J1_1', j:1, d:'2026-09-08', t:'18:45', h:'Club Brugge', a:'Aston Villa'},
+  {id:'J1_2', j:1, d:'2026-09-08', t:'18:45', h:'AEK Athens', a:'LASK'},
+  {id:'J1_3', j:1, d:'2026-09-08', t:'21:00', h:'Real Madrid', a:'Inter'},
+  {id:'J1_4', j:1, d:'2026-09-08', t:'21:00', h:'B. Dortmund', a:'Villarreal'},
+  {id:'J1_5', j:1, d:'2026-09-08', t:'21:00', h:'Porto', a:'Man City'},
+  {id:'J1_6', j:1, d:'2026-09-08', t:'21:00', h:'Lille', a:'Real Betis'},
+  {id:'J1_7', j:1, d:'2026-09-09', t:'18:45', h:'Barcelona', a:'Feyenoord'},
+  {id:'J1_8', j:1, d:'2026-09-09', t:'18:45', h:'Stuttgart', a:'Viking'},
+  {id:'J1_9', j:1, d:'2026-09-09', t:'21:00', h:'Paris', a:'Slovan Bratislava'},
+  {id:'J1_10', j:1, d:'2026-09-09', t:'21:00', h:'Liverpool', a:'Atlético Madrid'},
+  {id:'J1_11', j:1, d:'2026-09-09', t:'21:00', h:'Sporting CP', a:'Galatasaray'},
+  {id:'J1_12', j:1, d:'2026-09-09', t:'21:00', h:'Napoli', a:'Arsenal'},
+  {id:'J1_13', j:1, d:'2026-09-10', t:'18:45', h:'PSV', a:'Shakhtar'},
+  {id:'J1_14', j:1, d:'2026-09-10', t:'18:45', h:'Fenerbahçe', a:'Roma'},
+  {id:'J1_15', j:1, d:'2026-09-10', t:'21:00', h:'Bayern München', a:'Bodø/Glimt'},
+  {id:'J1_16', j:1, d:'2026-09-10', t:'21:00', h:'Man Utd', a:'Sabah'},
+  {id:'J1_17', j:1, d:'2026-09-10', t:'21:00', h:'Slavia Praha', a:'Lens'},
+  {id:'J1_18', j:1, d:'2026-09-10', t:'21:00', h:'Como', a:'Leipzig'},
+  {id:'J2_1', j:2, d:'2026-10-13', t:'18:45', h:'Lens', a:'Sporting CP'},
+  {id:'J2_2', j:2, d:'2026-10-13', t:'18:45', h:'Sabah', a:'Slavia Praha'},
+  {id:'J2_3', j:2, d:'2026-10-13', t:'21:00', h:'Inter', a:'Club Brugge'},
+  {id:'J2_4', j:2, d:'2026-10-13', t:'21:00', h:'Arsenal', a:'Lille'},
+  {id:'J2_5', j:2, d:'2026-10-13', t:'21:00', h:'Atlético Madrid', a:'Man Utd'},
+  {id:'J2_6', j:2, d:'2026-10-13', t:'21:00', h:'Leipzig', a:'PSV'},
+  {id:'J2_7', j:2, d:'2026-10-13', t:'21:00', h:'Villarreal', a:'Napoli'},
+  {id:'J2_8', j:2, d:'2026-10-13', t:'21:00', h:'Galatasaray', a:'Barcelona'},
+  {id:'J2_9', j:2, d:'2026-10-13', t:'21:00', h:'Viking', a:'Bayern München'},
+  {id:'J2_10', j:2, d:'2026-10-14', t:'18:45', h:'Feyenoord', a:'Como'},
+  {id:'J2_11', j:2, d:'2026-10-14', t:'18:45', h:'LASK', a:'Liverpool'},
+  {id:'J2_12', j:2, d:'2026-10-14', t:'21:00', h:'Man City', a:'Paris'},
+  {id:'J2_13', j:2, d:'2026-10-14', t:'21:00', h:'Roma', a:'Real Madrid'},
+  {id:'J2_14', j:2, d:'2026-10-14', t:'21:00', h:'Aston Villa', a:'Fenerbahçe'},
+  {id:'J2_15', j:2, d:'2026-10-14', t:'21:00', h:'Real Betis', a:'Porto'},
+  {id:'J2_16', j:2, d:'2026-10-14', t:'21:00', h:'Bodø/Glimt', a:'B. Dortmund'},
+  {id:'J2_17', j:2, d:'2026-10-14', t:'21:00', h:'Shakhtar', a:'AEK Athens'},
+  {id:'J2_18', j:2, d:'2026-10-14', t:'21:00', h:'Slovan Bratislava', a:'Stuttgart'},
+  {id:'J3_1', j:3, d:'2026-10-20', t:'18:45', h:'Fenerbahçe', a:'Slavia Praha'},
+  {id:'J3_2', j:3, d:'2026-10-20', t:'18:45', h:'Sabah', a:'B. Dortmund'},
+  {id:'J3_3', j:3, d:'2026-10-20', t:'21:00', h:'Paris', a:'Barcelona'},
+  {id:'J3_4', j:3, d:'2026-10-20', t:'21:00', h:'Liverpool', a:'Villarreal'},
+  {id:'J3_5', j:3, d:'2026-10-20', t:'21:00', h:'Man City', a:'AEK Athens'},
+  {id:'J3_6', j:3, d:'2026-10-20', t:'21:00', h:'Roma', a:'Slovan Bratislava'},
+  {id:'J3_7', j:3, d:'2026-10-20', t:'21:00', h:'Porto', a:'PSV'},
+  {id:'J3_8', j:3, d:'2026-10-20', t:'21:00', h:'Napoli', a:'Bodø/Glimt'},
+  {id:'J3_9', j:3, d:'2026-10-20', t:'21:00', h:'Stuttgart', a:'Atlético Madrid'},
+  {id:'J3_10', j:3, d:'2026-10-21', t:'18:45', h:'Lille', a:'Galatasaray'},
+  {id:'J3_11', j:3, d:'2026-10-21', t:'18:45', h:'Como', a:'Man Utd'},
+  {id:'J3_12', j:3, d:'2026-10-21', t:'21:00', h:'Bayern München', a:'Arsenal'},
+  {id:'J3_13', j:3, d:'2026-10-21', t:'21:00', h:'Real Madrid', a:'Leipzig'},
+  {id:'J3_14', j:3, d:'2026-10-21', t:'21:00', h:'Inter', a:'Shakhtar'},
+  {id:'J3_15', j:3, d:'2026-10-21', t:'21:00', h:'Sporting CP', a:'LASK'},
+  {id:'J3_16', j:3, d:'2026-10-21', t:'21:00', h:'Aston Villa', a:'Viking'},
+  {id:'J3_17', j:3, d:'2026-10-21', t:'21:00', h:'Club Brugge', a:'Lens'},
+  {id:'J3_18', j:3, d:'2026-10-21', t:'21:00', h:'Real Betis', a:'Feyenoord'},
+  {id:'J4_1', j:4, d:'2026-11-03', t:'18:45', h:'Shakhtar', a:'Sporting CP'},
+  {id:'J4_2', j:4, d:'2026-11-03', t:'18:45', h:'Galatasaray', a:'Stuttgart'},
+  {id:'J4_3', j:4, d:'2026-11-03', t:'21:00', h:'Barcelona', a:'Aston Villa'},
+  {id:'J4_4', j:4, d:'2026-11-03', t:'21:00', h:'Atlético Madrid', a:'Bayern München'},
+  {id:'J4_5', j:4, d:'2026-11-03', t:'21:00', h:'Man Utd', a:'Roma'},
+  {id:'J4_6', j:4, d:'2026-11-03', t:'21:00', h:'Feyenoord', a:'Inter'},
+  {id:'J4_7', j:4, d:'2026-11-03', t:'21:00', h:'Bodø/Glimt', a:'Lille'},
+  {id:'J4_8', j:4, d:'2026-11-03', t:'21:00', h:'Villarreal', a:'Paris'},
+  {id:'J4_9', j:4, d:'2026-11-03', t:'21:00', h:'LASK', a:'Slovan Bratislava'},
+  {id:'J4_10', j:4, d:'2026-11-04', t:'18:45', h:'Fenerbahçe', a:'Liverpool'},
+  {id:'J4_11', j:4, d:'2026-11-04', t:'18:45', h:'AEK Athens', a:'Real Madrid'},
+  {id:'J4_12', j:4, d:'2026-11-04', t:'21:00', h:'B. Dortmund', a:'Real Betis'},
+  {id:'J4_13', j:4, d:'2026-11-04', t:'21:00', h:'Porto', a:'Napoli'},
+  {id:'J4_14', j:4, d:'2026-11-04', t:'21:00', h:'PSV', a:'Club Brugge'},
+  {id:'J4_15', j:4, d:'2026-11-04', t:'21:00', h:'Leipzig', a:'Man City'},
+  {id:'J4_16', j:4, d:'2026-11-04', t:'21:00', h:'Slavia Praha', a:'Arsenal'},
+  {id:'J4_17', j:4, d:'2026-11-04', t:'21:00', h:'Lens', a:'Como'},
+  {id:'J4_18', j:4, d:'2026-11-04', t:'21:00', h:'Viking', a:'Sabah'},
+  {id:'J5_1', j:5, d:'2026-11-24', t:'18:45', h:'Bodø/Glimt', a:'LASK'},
+  {id:'J5_2', j:5, d:'2026-11-24', t:'18:45', h:'Galatasaray', a:'Aston Villa'},
+  {id:'J5_3', j:5, d:'2026-11-24', t:'21:00', h:'Real Madrid', a:'PSV'},
+  {id:'J5_4', j:5, d:'2026-11-24', t:'21:00', h:'Man City', a:'Napoli'},
+  {id:'J5_5', j:5, d:'2026-11-24', t:'21:00', h:'Arsenal', a:'B. Dortmund'},
+  {id:'J5_6', j:5, d:'2026-11-24', t:'21:00', h:'Feyenoord', a:'Porto'},
+  {id:'J5_7', j:5, d:'2026-11-24', t:'21:00', h:'Leipzig', a:'Lens'},
+  {id:'J5_8', j:5, d:'2026-11-24', t:'21:00', h:'Slovan Bratislava', a:'Real Betis'},
+  {id:'J5_9', j:5, d:'2026-11-24', t:'21:00', h:'Como', a:'AEK Athens'},
+  {id:'J5_10', j:5, d:'2026-11-25', t:'18:45', h:'Slavia Praha', a:'Villarreal'},
+  {id:'J5_11', j:5, d:'2026-11-25', t:'18:45', h:'Sabah', a:'Barcelona'},
+  {id:'J5_12', j:5, d:'2026-11-25', t:'21:00', h:'Paris', a:'Roma'},
+  {id:'J5_13', j:5, d:'2026-11-25', t:'21:00', h:'Inter', a:'Stuttgart'},
+  {id:'J5_14', j:5, d:'2026-11-25', t:'21:00', h:'Atlético Madrid', a:'Viking'},
+  {id:'J5_15', j:5, d:'2026-11-25', t:'21:00', h:'Sporting CP', a:'Man Utd'},
+  {id:'J5_16', j:5, d:'2026-11-25', t:'21:00', h:'Club Brugge', a:'Liverpool'},
+  {id:'J5_17', j:5, d:'2026-11-25', t:'21:00', h:'Lille', a:'Bayern München'},
+  {id:'J5_18', j:5, d:'2026-11-25', t:'21:00', h:'Shakhtar', a:'Fenerbahçe'},
+  {id:'J6_1', j:6, d:'2026-12-08', t:'18:45', h:'Villarreal', a:'Sabah'},
+  {id:'J6_2', j:6, d:'2026-12-08', t:'18:45', h:'Viking', a:'Feyenoord'},
+  {id:'J6_3', j:6, d:'2026-12-08', t:'21:00', h:'Bayern München', a:'Slavia Praha'},
+  {id:'J6_4', j:6, d:'2026-12-08', t:'21:00', h:'Barcelona', a:'Man City'},
+  {id:'J6_5', j:6, d:'2026-12-08', t:'21:00', h:'Roma', a:'Sporting CP'},
+  {id:'J6_6', j:6, d:'2026-12-08', t:'21:00', h:'Aston Villa', a:'Paris'},
+  {id:'J6_7', j:6, d:'2026-12-08', t:'21:00', h:'Man Utd', a:'Leipzig'},
+  {id:'J6_8', j:6, d:'2026-12-08', t:'21:00', h:'Napoli', a:'Club Brugge'},
+  {id:'J6_9', j:6, d:'2026-12-08', t:'21:00', h:'AEK Athens', a:'Galatasaray'},
+  {id:'J6_10', j:6, d:'2026-12-09', t:'18:45', h:'Real Betis', a:'Como'},
+  {id:'J6_11', j:6, d:'2026-12-09', t:'18:45', h:'Slovan Bratislava', a:'Shakhtar'},
+  {id:'J6_12', j:6, d:'2026-12-09', t:'21:00', h:'Liverpool', a:'Porto'},
+  {id:'J6_13', j:6, d:'2026-12-09', t:'21:00', h:'Arsenal', a:'Real Madrid'},
+  {id:'J6_14', j:6, d:'2026-12-09', t:'21:00', h:'B. Dortmund', a:'Inter'},
+  {id:'J6_15', j:6, d:'2026-12-09', t:'21:00', h:'PSV', a:'Atlético Madrid'},
+  {id:'J6_16', j:6, d:'2026-12-09', t:'21:00', h:'Stuttgart', a:'Lille'},
+  {id:'J6_17', j:6, d:'2026-12-09', t:'21:00', h:'LASK', a:'Fenerbahçe'},
+  {id:'J6_18', j:6, d:'2026-12-09', t:'21:00', h:'Lens', a:'Bodø/Glimt'},
+  {id:'J7_1', j:7, d:'2027-01-19', t:'18:45', h:'Bodø/Glimt', a:'Atlético Madrid'},
+  {id:'J7_2', j:7, d:'2027-01-19', t:'18:45', h:'Galatasaray', a:'Feyenoord'},
+  {id:'J7_3', j:7, d:'2027-01-19', t:'21:00', h:'Real Madrid', a:'LASK'},
+  {id:'J7_4', j:7, d:'2027-01-19', t:'21:00', h:'Inter', a:'Liverpool'},
+  {id:'J7_5', j:7, d:'2027-01-19', t:'21:00', h:'Aston Villa', a:'B. Dortmund'},
+  {id:'J7_6', j:7, d:'2027-01-19', t:'21:00', h:'Porto', a:'Slavia Praha'},
+  {id:'J7_7', j:7, d:'2027-01-19', t:'21:00', h:'Lille', a:'Slovan Bratislava'},
+  {id:'J7_8', j:7, d:'2027-01-19', t:'21:00', h:'Stuttgart', a:'Club Brugge'},
+  {id:'J7_9', j:7, d:'2027-01-19', t:'21:00', h:'AEK Athens', a:'Roma'},
+  {id:'J7_10', j:7, d:'2027-01-20', t:'18:45', h:'Fenerbahçe', a:'Villarreal'},
+  {id:'J7_11', j:7, d:'2027-01-20', t:'18:45', h:'Sabah', a:'Napoli'},
+  {id:'J7_12', j:7, d:'2027-01-20', t:'21:00', h:'Sporting CP', a:'Barcelona'},
+  {id:'J7_13', j:7, d:'2027-01-20', t:'21:00', h:'Man Utd', a:'Bayern München'},
+  {id:'J7_14', j:7, d:'2027-01-20', t:'21:00', h:'Real Betis', a:'Arsenal'},
+  {id:'J7_15', j:7, d:'2027-01-20', t:'21:00', h:'Leipzig', a:'Shakhtar'},
+  {id:'J7_16', j:7, d:'2027-01-20', t:'21:00', h:'Como', a:'Paris'},
+  {id:'J7_17', j:7, d:'2027-01-20', t:'21:00', h:'Lens', a:'Man City'},
+  {id:'J7_18', j:7, d:'2027-01-20', t:'21:00', h:'Viking', a:'PSV'},
+  {id:'J8_1', j:8, d:'2027-01-27', t:'21:00', h:'Paris', a:'Galatasaray'},
+  {id:'J8_2', j:8, d:'2027-01-27', t:'21:00', h:'Bayern München', a:'Real Betis'},
+  {id:'J8_3', j:8, d:'2027-01-27', t:'21:00', h:'Liverpool', a:'Lens'},
+  {id:'J8_4', j:8, d:'2027-01-27', t:'21:00', h:'Man City', a:'Sporting CP'},
+  {id:'J8_5', j:8, d:'2027-01-27', t:'21:00', h:'Arsenal', a:'Sabah'},
+  {id:'J8_6', j:8, d:'2027-01-27', t:'21:00', h:'Barcelona', a:'Como'},
+  {id:'J8_7', j:8, d:'2027-01-27', t:'21:00', h:'Atlético Madrid', a:'Fenerbahçe'},
+  {id:'J8_8', j:8, d:'2027-01-27', t:'21:00', h:'B. Dortmund', a:'AEK Athens'},
+  {id:'J8_9', j:8, d:'2027-01-27', t:'21:00', h:'Roma', a:'Lille'},
+  {id:'J8_10', j:8, d:'2027-01-27', t:'21:00', h:'Club Brugge', a:'Bodø/Glimt'},
+  {id:'J8_11', j:8, d:'2027-01-27', t:'21:00', h:'PSV', a:'Stuttgart'},
+  {id:'J8_12', j:8, d:'2027-01-27', t:'21:00', h:'Feyenoord', a:'Leipzig'},
+  {id:'J8_13', j:8, d:'2027-01-27', t:'21:00', h:'Napoli', a:'Viking'},
+  {id:'J8_14', j:8, d:'2027-01-27', t:'21:00', h:'Villarreal', a:'Man Utd'},
+  {id:'J8_15', j:8, d:'2027-01-27', t:'21:00', h:'Shakhtar', a:'Real Madrid'},
+  {id:'J8_16', j:8, d:'2027-01-27', t:'21:00', h:'Slavia Praha', a:'Aston Villa'},
+  {id:'J8_17', j:8, d:'2027-01-27', t:'21:00', h:'Slovan Bratislava', a:'Inter'},
+  {id:'J8_18', j:8, d:'2027-01-27', t:'21:00', h:'LASK', a:'Porto'},
+];
+
+/* ============ ESTRUCTURA DE ELIMINATORIAS ============
+   Los cruces reales no se conocen hasta que termina la fase de liga
+   (playoff) y hasta que se resuelve cada ronda. Cada eliminatoria se
+   "desbloquea" (unlocked:true) y se rellenan home/away cuando el
+   sorteo/resultado correspondiente es conocido. Mientras tanto se
+   muestran como "Por determinar". Esto es lo mismo que el mecanismo
+   koLocked de la porra del Mundial, adaptado a ida y vuelta. */
+let KO = [
+  // Playoffs (9º-24º), ida y vuelta — 8 eliminatorias
+  {id:'PO1', stage:'Playoff', tie:1, home:'', away:'', unlocked:false},
+  {id:'PO2', stage:'Playoff', tie:2, home:'', away:'', unlocked:false},
+  {id:'PO3', stage:'Playoff', tie:3, home:'', away:'', unlocked:false},
+  {id:'PO4', stage:'Playoff', tie:4, home:'', away:'', unlocked:false},
+  {id:'PO5', stage:'Playoff', tie:5, home:'', away:'', unlocked:false},
+  {id:'PO6', stage:'Playoff', tie:6, home:'', away:'', unlocked:false},
+  {id:'PO7', stage:'Playoff', tie:7, home:'', away:'', unlocked:false},
+  {id:'PO8', stage:'Playoff', tie:8, home:'', away:'', unlocked:false},
+  // Octavos de Final, ida y vuelta — 8 eliminatorias
+  {id:'R16_1', stage:'Octavos', tie:1, home:'', away:'', unlocked:false},
+  {id:'R16_2', stage:'Octavos', tie:2, home:'', away:'', unlocked:false},
+  {id:'R16_3', stage:'Octavos', tie:3, home:'', away:'', unlocked:false},
+  {id:'R16_4', stage:'Octavos', tie:4, home:'', away:'', unlocked:false},
+  {id:'R16_5', stage:'Octavos', tie:5, home:'', away:'', unlocked:false},
+  {id:'R16_6', stage:'Octavos', tie:6, home:'', away:'', unlocked:false},
+  {id:'R16_7', stage:'Octavos', tie:7, home:'', away:'', unlocked:false},
+  {id:'R16_8', stage:'Octavos', tie:8, home:'', away:'', unlocked:false},
+  // Cuartos de Final, ida y vuelta — 4 eliminatorias
+  {id:'QF1', stage:'Cuartos', tie:1, home:'', away:'', unlocked:false},
+  {id:'QF2', stage:'Cuartos', tie:2, home:'', away:'', unlocked:false},
+  {id:'QF3', stage:'Cuartos', tie:3, home:'', away:'', unlocked:false},
+  {id:'QF4', stage:'Cuartos', tie:4, home:'', away:'', unlocked:false},
+  // Semifinales, ida y vuelta — 2 eliminatorias
+  {id:'SF1', stage:'Semifinales', tie:1, home:'', away:'', unlocked:false},
+  {id:'SF2', stage:'Semifinales', tie:2, home:'', away:'', unlocked:false},
+  // Final, partido único — Estadio Metropolitano, Madrid (5 jun 2027)
+  {id:'FINAL', stage:'Final', tie:1, home:'', away:'', unlocked:false},
+];
+// Cada eliminatoria a doble partido genera dos partidos individuales (ida/vuelta),
+// cada uno puntuable con la tabla estándar (+3/+2/+1). La Final es partido único.
+function koLegIds(tieId){
+  if(tieId==='FINAL') return [{id:'FINAL', label:'Final única'}];
+  return [{id:tieId+'_ida', label:'Ida'}, {id:tieId+'_vuelta', label:'Vuelta'}];
+}
+
+/* ============ ESTADO ============ */
+let PARTICIPANTS = [];   // [{id,name,alias,matches:{},top8:[],champion,runnerUp,leagueLeader,scorer,ko:{}}]
+let RESULTS = {matches:{}, top8Actual:[], champion:'', runnerUp:'', leagueLeader:'', scorer:'', ko:{}};
+let currentUserId = localStorage_get('ccl_uid') || null;
+let draftKey = 'ccl_draft';
+
+function localStorage_get(k){ try{return null;}catch(e){return null;} } // in-memory only (ver nota abajo)
+
+/* ============ NORMALIZACIÓN DE TEXTO (evita el bug de acentos del Mundial) ============ */
+function norm(s){
+  return (s||'').toString().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').trim();
+}
+
+/* ============ PUNTUACIÓN ============ */
+function sign(h,a){ return h>a?'1':(h===a?'X':'2'); }
+
+function matchPoints(pred, real){
+  if(!pred || real==null || real.h==null || real.a==null || pred.h===''||pred.h==null||pred.a===''||pred.a==null) return {pts:0,tag:''};
+  const ph=Number(pred.h), pa=Number(pred.a), rh=Number(real.h), ra=Number(real.a);
+  if(isNaN(ph)||isNaN(pa)) return {pts:0,tag:''};
+  if(ph===rh && pa===ra) return {pts:3,tag:'exact'};
+  const sameSign = sign(ph,pa)===sign(rh,ra);
+  const sameDiff = (ph-pa)===(rh-ra);
+  if(sameSign && sameDiff) return {pts:2,tag:'diff'};
+  if(sameSign) return {pts:1,tag:'sign'};
+  return {pts:0,tag:''};
+}
+
+function calcPts(p){
+  let pts=0;
+  const breakdown={liga:0, top8:0, ko:0, bonus:0};
+  // Fase de liga
+  MATCHES.forEach(m=>{
+    const real = RESULTS.matches[m.id];
+    const pred = p.matches && p.matches[m.id];
+    if(real){ const r=matchPoints(pred,real); pts+=r.pts; breakdown.liga+=r.pts; }
+  });
+  // Eliminatorias (cada pierna cuenta igual que un partido de liga)
+  KO.forEach(tieDef=>{
+    koLegIds(tieDef.id).forEach(leg=>{
+      const real = RESULTS.ko[leg.id];
+      const pred = p.ko && p.ko[leg.id];
+      if(real){ const r=matchPoints(pred,real); pts+=r.pts; breakdown.ko+=r.pts; }
+    });
+  });
+  // Bonus Top 8 (+4 por equipo acertado en el top 8 real, tras la jornada 8)
+  if(RESULTS.top8Actual && RESULTS.top8Actual.length===8 && p.top8){
+    const actualSet = new Set(RESULTS.top8Actual.map(norm));
+    let hits=0;
+    p.top8.forEach(t=>{ if(t && actualSet.has(norm(t))) hits++; });
+    pts += hits*4; breakdown.top8 = hits*4;
+  }
+  // Bonus finales
+  let bonus=0;
+  if(RESULTS.champion && p.champion && norm(p.champion)===norm(RESULTS.champion)) bonus+=10;
+  if(RESULTS.runnerUp && p.runnerUp && norm(p.runnerUp)===norm(RESULTS.runnerUp)) bonus+=6;
+  if(RESULTS.leagueLeader && p.leagueLeader && norm(p.leagueLeader)===norm(RESULTS.leagueLeader)) bonus+=4;
+  if(RESULTS.scorer && p.scorer && norm(p.scorer).includes(norm(RESULTS.scorer).split(' ')[0])) bonus+=3;
+  pts += bonus; breakdown.bonus = bonus;
+  return {total:pts, breakdown};
+}
+
+/* ============ API (Apps Script) ============ */
+async function apiCall(action, payload){
+  if(!API_URL || API_URL.indexOf('PON_AQUI')===0){
+    console.warn('API_URL no configurada todavía — modo local/demo.');
+    return {ok:false, demo:true};
+  }
+  try{
+    const res = await fetch(API_URL, {
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({action, payload})
+    });
+    return await res.json();
+  }catch(e){
+    console.error(e);
+    return {ok:false, error:String(e)};
+  }
+}
+
+async function loadAll(){
+  const data = await apiCall('getAll', {});
+  if(data && data.ok){
+    PARTICIPANTS = data.participants || [];
+    RESULTS = Object.assign({matches:{}, top8Actual:[], champion:'', runnerUp:'', leagueLeader:'', scorer:'', ko:{}}, data.results||{});
+    KO = data.ko || KO;
+  }
+  document.getElementById('headerSub').textContent =
+    `${PARTICIPANTS.length} participantes · Jornada 1: 8 sep 2026 · Final: 5 jun 2027 (Metropolitano)`;
+}
+
+async function savePorra(p){
+  const res = await apiCall('savePorra', p);
+  return res;
+}
+
+/* ============ NAVEGACIÓN DE TABS ============ */
+document.querySelectorAll('nav button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('main section').forEach(s=>s.style.display='none');
+    document.getElementById('tab-'+btn.dataset.tab).style.display='block';
+    renderTab(btn.dataset.tab);
+  });
+});
+
+function renderTab(tab){
+  if(tab==='ranking') renderRanking();
+  if(tab==='partidos') renderPartidos();
+  if(tab==='predicciones') renderPredicciones();
+  if(tab==='miporra') renderMiPorra();
+}
+
+/* ============ RANKING ============ */
+function renderRanking(){
+  const el = document.getElementById('tab-ranking');
+  if(!PARTICIPANTS.length){ el.innerHTML = '<div class="empty">Todavía no hay participantes cargados.</div>'; return; }
+  const rows = PARTICIPANTS.map(p=>({p, r:calcPts(p)})).sort((a,b)=>b.r.total-a.r.total);
+  let html = '<div class="card"><h2>Clasificación general</h2><table><thead><tr><th>#</th><th>Participante</th><th>Liga</th><th>Elim.</th><th>Top8</th><th>Bonus</th><th style="text-align:right">Total</th></tr></thead><tbody>';
+  rows.forEach((row,i)=>{
+    const medal = i===0?'medal-1':i===1?'medal-2':i===2?'medal-3':'';
+    html += `<tr class="${row.p.id===currentUserId?'me':''}">
+      <td class="pos ${medal}">${i+1}</td>
+      <td>${escapeHtml(row.p.alias||row.p.name)}</td>
+      <td>${row.r.breakdown.liga}</td>
+      <td>${row.r.breakdown.ko}</td>
+      <td>${row.r.breakdown.top8}</td>
+      <td>${row.r.breakdown.bonus}</td>
+      <td class="pts">${row.r.total}</td>
+    </tr>`;
+  });
+  html += '</tbody></table></div>';
+  el.innerHTML = html;
+}
+
+/* ============ PARTIDOS ============ */
+function renderPartidos(){
+  const el = document.getElementById('tab-partidos');
+  let html = '<div class="card"><h2>Fase de liga — 144 partidos</h2>';
+  for(let j=1;j<=8;j++){
+    const dates = [...new Set(MATCHES.filter(m=>m.j===j).map(m=>m.d))];
+    html += `<div class="jornada-title">Jornada ${j} <span class="tag">${dates.map(fmtDate).join(' / ')}</span></div>`;
+    MATCHES.filter(m=>m.j===j).forEach(m=>{
+      const real = RESULTS.matches[m.id];
+      html += `<div class="match-row">
+        <div class="team home">${escapeHtml(m.h)}</div>
+        <div>${real&&real.h!=null?real.h:'-'}</div>
+        <div>${real&&real.a!=null?real.a:'-'}</div>
+        <div class="team">${escapeHtml(m.a)}</div>
+      </div>`;
+    });
+  }
+  html += '</div>';
+  html += renderKoBlock(false);
+  el.innerHTML = html;
+}
+
+function renderKoBlock(editable, sourceObj, prefix){
+  const stages = ['Playoff','Octavos','Cuartos','Semifinales','Final'];
+  let html = '<div class="card"><h2>Eliminatorias</h2><p class="muted" style="font-size:.8rem">Los cruces se desbloquean según se van conociendo (igual que en la porra del Mundial). Hasta entonces aparecen como "por determinar".</p>';
+  stages.forEach(stage=>{
+    const ties = KO.filter(k=>k.stage===stage);
+    html += `<h3>${stage}</h3>`;
+    ties.forEach(tie=>{
+      const legs = koLegIds(tie.id);
+      const label = tie.unlocked ? `${escapeHtml(tie.home)} vs ${escapeHtml(tie.away)}` : 'Por determinar';
+      html += `<div class="match-meta">${label}</div>`;
+      legs.forEach(leg=>{
+        const real = RESULTS.ko[leg.id];
+        html += `<div class="match-row ${tie.unlocked?'':'ko-section'}">
+          <div class="team home">${tie.unlocked?escapeHtml(tie.home):'?'}</div>
+          <div>${real&&real.h!=null?real.h:'-'}</div>
+          <div>${real&&real.a!=null?real.a:'-'}</div>
+          <div class="team">${tie.unlocked?escapeHtml(tie.away):'?'} <span class="tag">${leg.label}</span></div>
+        </div>`;
+      });
+    });
+  });
+  html += '</div>';
+  return html;
+}
+
+/* ============ PREDICCIONES (ver las de otro participante) ============ */
+function renderPredicciones(){
+  const el = document.getElementById('tab-predicciones');
+  if(!PARTICIPANTS.length){ el.innerHTML = '<div class="empty">Todavía no hay participantes cargados.</div>'; return; }
+  let html = '<div class="card"><h2>Ver predicciones</h2><select id="predSelect">';
+  PARTICIPANTS.forEach(p=>{ html += `<option value="${p.id}">${escapeHtml(p.alias||p.name)}</option>`; });
+  html += '</select></div><div id="predBody"></div>';
+  el.innerHTML = html;
+  document.getElementById('predSelect').addEventListener('change', renderPredBody);
+  renderPredBody();
+}
+
+function renderPredBody(){
+  const sel = document.getElementById('predSelect');
+  const p = PARTICIPANTS.find(x=>x.id===sel.value) || PARTICIPANTS[0];
+  if(!p) return;
+  const r = calcPts(p);
+  let html = `<div class="card">
+    <h2>${escapeHtml(p.alias||p.name)} · <span class="pts">${r.total} pts</span></h2>
+    <div class="bonus-grid">
+      <div>🏆 Campeón: <b>${escapeHtml(p.champion||'-')}</b></div>
+      <div>🥈 Subcampeón: <b>${escapeHtml(p.runnerUp||'-')}</b></div>
+      <div>📊 1º fase de liga: <b>${escapeHtml(p.leagueLeader||'-')}</b></div>
+      <div>⚽ Máx. goleador: <b>${escapeHtml(p.scorer||'-')}</b></div>
+      <div>🎯 Top 8: ${(p.top8||[]).map(escapeHtml).join(', ')||'-'}</div>
+    </div>
+  </div><div class="card"><h2>Marcadores (fase de liga)</h2>`;
+  for(let j=1;j<=8;j++){
+    html += `<div class="jornada-title">Jornada ${j}</div>`;
+    MATCHES.filter(m=>m.j===j).forEach(m=>{
+      const pred = p.matches && p.matches[m.id];
+      const real = RESULTS.matches[m.id];
+      const r2 = real ? matchPoints(pred, real) : {pts:0,tag:''};
+      html += `<div class="match-row">
+        <div class="team home">${escapeHtml(m.h)}</div>
+        <div>${pred&&pred.h!=null&&pred.h!==''?pred.h:'-'}</div>
+        <div>${pred&&pred.a!=null&&pred.a!==''?pred.a:'-'}</div>
+        <div class="team">${escapeHtml(m.a)} ${real?`<span class="result-badge ${r2.tag}">${r2.pts>0?'+'+r2.pts:'0'}</span>`:''}</div>
+      </div>`;
+    });
+  }
+  html += '</div>';
+  document.getElementById('predBody').innerHTML = html;
+}
+
+/* ============ MI PORRA (rellenar predicciones) ============ */
+let draft = null;
+
+function blankParticipant(){
+  return {id:'', name:'', alias:'', matches:{}, top8:[], champion:'', runnerUp:'', leagueLeader:'', scorer:'', ko:{}};
+}
+
+function renderMiPorra(){
+  const el = document.getElementById('tab-miporra');
+  if(!draft){
+    const existing = currentUserId ? PARTICIPANTS.find(p=>p.id===currentUserId) : null;
+    draft = existing ? JSON.parse(JSON.stringify(existing)) : blankParticipant();
+  }
+  let html = `<div class="card">
+    <h2>Mis datos</h2>
+    <label class="field-label">Tu nombre / alias (como aparecerá en el ranking)</label>
+    <input type="text" id="fName" value="${escapeHtml(draft.alias||draft.name||'')}" placeholder="Ej: Marcel">
+  </div>`;
+
+  html += `<div class="card"><h2>Bonus finales</h2><div class="bonus-grid">
+    <div><label class="field-label">🏆 Campeón</label>${teamSelect('fChampion', draft.champion)}</div>
+    <div><label class="field-label">🥈 Subcampeón</label>${teamSelect('fRunnerUp', draft.runnerUp)}</div>
+    <div><label class="field-label">📊 Equipo 1º de la fase de liga</label>${teamSelect('fLeader', draft.leagueLeader)}</div>
+    <div><label class="field-label">⚽ Máximo goleador (nombre)</label><input type="text" id="fScorer" value="${escapeHtml(draft.scorer||'')}" placeholder="Ej: Mbappe"></div>
+  </div></div>`;
+
+  html += `<div class="card"><h2>Top 8 (pase directo a octavos)</h2>
+    <p class="muted" style="font-size:.8rem">Elige los 8 equipos que crees que terminarán 1º-8º tras la jornada 8. +4 pts por cada acierto.</p>
+    <div class="top8-grid" id="top8Grid">`;
+  TEAMS.forEach(t=>{
+    const checked = draft.top8 && draft.top8.includes(t);
+    html += `<label class="team-chip ${checked?'checked':''}"><input type="checkbox" value="${escapeHtml(t)}" ${checked?'checked':''} onchange="toggleTop8(this)"> ${escapeHtml(t)}</label>`;
+  });
+  html += `</div><div class="counter" id="top8Counter"></div></div>`;
+
+  html += '<div class="card"><h2>Marcadores — Fase de liga (144 partidos)</h2>';
+  for(let j=1;j<=8;j++){
+    html += `<div class="jornada-title">Jornada ${j}</div>`;
+    MATCHES.filter(m=>m.j===j).forEach(m=>{
+      const pred = draft.matches[m.id] || {};
+      html += `<div class="match-row">
+        <div class="team home">${escapeHtml(m.h)}</div>
+        <input type="number" min="0" max="20" data-mid="${m.id}" data-side="h" value="${pred.h!=null?pred.h:''}">
+        <input type="number" min="0" max="20" data-mid="${m.id}" data-side="a" value="${pred.a!=null?pred.a:''}">
+        <div class="team">${escapeHtml(m.a)}</div>
+      </div>`;
+    });
+  }
+  html += '</div>';
+
+  html += '<div class="card"><h2>Eliminatorias</h2><p class="muted" style="font-size:.8rem">Se activan aquí en cuanto se conozcan los cruces de cada ronda.</p>';
+  KO.forEach(tie=>{
+    if(!tie.unlocked) return;
+    html += `<div class="match-meta"><b>${tie.stage}:</b> ${escapeHtml(tie.home)} vs ${escapeHtml(tie.away)}</div>`;
+    koLegIds(tie.id).forEach(leg=>{
+      const pred = draft.ko[leg.id] || {};
+      html += `<div class="match-row">
+        <div class="team home">${escapeHtml(tie.home)}</div>
+        <input type="number" min="0" max="20" data-koid="${leg.id}" data-side="h" value="${pred.h!=null?pred.h:''}">
+        <input type="number" min="0" max="20" data-koid="${leg.id}" data-side="a" value="${pred.a!=null?pred.a:''}">
+        <div class="team">${escapeHtml(tie.away)} <span class="tag">${leg.label}</span></div>
+      </div>`;
+    });
+  });
+  const anyUnlocked = KO.some(t=>t.unlocked);
+  if(!anyUnlocked) html += '<div class="empty">Aún no hay ninguna eliminatoria desbloqueada.</div>';
+  html += '</div>';
+
+  html += `<div class="save-bar"><button class="btn" id="saveBtn">Guardar mi porra</button></div>`;
+
+  el.innerHTML = html;
+
+  document.querySelectorAll('#tab-miporra input[type=number]').forEach(inp=>{
+    inp.addEventListener('input', ()=>{
+      if(inp.dataset.mid){
+        draft.matches[inp.dataset.mid] = draft.matches[inp.dataset.mid] || {};
+        draft.matches[inp.dataset.mid][inp.dataset.side] = inp.value;
+      } else if(inp.dataset.koid){
+        draft.ko[inp.dataset.koid] = draft.ko[inp.dataset.koid] || {};
+        draft.ko[inp.dataset.koid][inp.dataset.side] = inp.value;
+      }
+    });
+  });
+  document.getElementById('saveBtn').addEventListener('click', onSave);
+  updateTop8Counter();
+}
+
+function teamSelect(id, value){
+  let html = `<select id="${id}"><option value="">-- elegir equipo --</option>`;
+  TEAMS.forEach(t=>{ html += `<option value="${escapeHtml(t)}" ${t===value?'selected':''}>${escapeHtml(t)}</option>`; });
+  html += '</select>';
+  return html;
+}
+
+function toggleTop8(cb){
+  draft.top8 = draft.top8 || [];
+  if(cb.checked){
+    if(draft.top8.length>=8){ cb.checked=false; showToast('Máximo 8 equipos'); return; }
+    draft.top8.push(cb.value);
+  } else {
+    draft.top8 = draft.top8.filter(t=>t!==cb.value);
+  }
+  cb.closest('.team-chip').classList.toggle('checked', cb.checked);
+  updateTop8Counter();
+}
+function updateTop8Counter(){
+  const c = document.getElementById('top8Counter');
+  if(c) c.textContent = `${(draft.top8||[]).length} / 8 seleccionados`;
+}
+
+async function onSave(){
+  draft.alias = document.getElementById('fName').value.trim();
+  draft.name = draft.alias;
+  draft.champion = document.getElementById('fChampion').value;
+  draft.runnerUp = document.getElementById('fRunnerUp').value;
+  draft.leagueLeader = document.getElementById('fLeader').value;
+  draft.scorer = document.getElementById('fScorer').value.trim();
+  if(!draft.alias){ showToast('Ponle un nombre a tu porra'); return; }
+  if(!draft.id) draft.id = 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2,7);
+  currentUserId = draft.id;
+  const res = await savePorra(draft);
+  const idx = PARTICIPANTS.findIndex(p=>p.id===draft.id);
+  if(idx>=0) PARTICIPANTS[idx] = draft; else PARTICIPANTS.push(draft);
+  showToast(res && res.ok ? 'Porra guardada ✔' : 'Guardado localmente (revisa la conexión con la API)');
+}
+
+/* ============ UTILIDADES ============ */
+function escapeHtml(s){
+  return (s==null?'':String(s)).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function fmtDate(iso){
+  const d = new Date(iso+'T00:00:00');
+  return d.toLocaleDateString('es-ES',{day:'2-digit',month:'short'});
+}
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+/* ============ INIT ============ */
+(async function init(){
+  await loadAll();
+  renderTab('ranking');
+})();
+</script>
+</body>
+</html>
