@@ -598,19 +598,21 @@ function renderMiPorra(){
     }
     if(draft.enviada==null) draft.enviada = false;
   }
+  const locked = !!draft.enviada;
+  const dis = locked ? 'disabled' : '';
   let html = `<div class="card" id="miPorraStatusCard">
     <span id="miPorraStatusText" class="muted">Cargando estado…</span>
   </div><div class="card">
     <h2>Mis datos</h2>
     <label class="field-label">Tu nombre / alias (como aparecerá en el ranking)</label>
-    <input type="text" id="fName" value="${escapeHtml(draft.alias||draft.name||'')}" placeholder="Ej: Marcel">
+    <input type="text" id="fName" ${dis} value="${escapeHtml(draft.alias||draft.name||'')}" placeholder="Ej: Marcel">
   </div>`;
 
   html += `<div class="card"><h2>Bonus finales</h2><div class="bonus-grid">
-    <div><label class="field-label">🏆 Campeón</label>${teamSelect('fChampion', draft.champion)}</div>
-    <div><label class="field-label">🥈 Subcampeón</label>${teamSelect('fRunnerUp', draft.runnerUp)}</div>
-    <div><label class="field-label">📊 Equipo 1º de la fase de liga</label>${teamSelect('fLeader', draft.leagueLeader)}</div>
-    <div><label class="field-label">⚽ Máximo goleador (nombre)</label><input type="text" id="fScorer" value="${escapeHtml(draft.scorer||'')}" placeholder="Ej: Mbappe"></div>
+    <div><label class="field-label">🏆 Campeón</label>${teamSelect('fChampion', draft.champion, locked)}</div>
+    <div><label class="field-label">🥈 Subcampeón</label>${teamSelect('fRunnerUp', draft.runnerUp, locked)}</div>
+    <div><label class="field-label">📊 Equipo 1º de la fase de liga</label>${teamSelect('fLeader', draft.leagueLeader, locked)}</div>
+    <div><label class="field-label">⚽ Máximo goleador (nombre)</label><input type="text" id="fScorer" ${dis} value="${escapeHtml(draft.scorer||'')}" placeholder="Ej: Mbappe"></div>
   </div></div>`;
 
   html += `<div class="card"><h2>Top 8 (pase directo a octavos)</h2>
@@ -618,7 +620,7 @@ function renderMiPorra(){
     <div class="top8-grid" id="top8Grid">`;
   TEAMS.forEach(t=>{
     const checked = draft.top8 && draft.top8.includes(t);
-    html += `<label class="team-chip ${checked?'checked':''}"><input type="checkbox" value="${escapeHtml(t)}" ${checked?'checked':''} onchange="toggleTop8(this)"> ${escapeHtml(t)}</label>`;
+    html += `<label class="team-chip ${checked?'checked':''}"><input type="checkbox" value="${escapeHtml(t)}" ${checked?'checked':''} ${dis} onchange="toggleTop8(this)"> ${escapeHtml(t)}</label>`;
   });
   html += `</div><div class="counter" id="top8Counter"></div></div>`;
 
@@ -629,8 +631,8 @@ function renderMiPorra(){
       const pred = draft.matches[m.id] || {};
       html += `<div class="match-row">
         <div class="team home">${escapeHtml(m.h)}</div>
-        <input type="number" min="0" max="20" data-mid="${m.id}" data-side="h" value="${pred.h!=null?pred.h:''}">
-        <input type="number" min="0" max="20" data-mid="${m.id}" data-side="a" value="${pred.a!=null?pred.a:''}">
+        <input type="number" min="0" max="20" ${dis} data-mid="${m.id}" data-side="h" value="${pred.h!=null?pred.h:''}">
+        <input type="number" min="0" max="20" ${dis} data-mid="${m.id}" data-side="a" value="${pred.a!=null?pred.a:''}">
         <div class="team">${escapeHtml(m.a)}</div>
       </div>`;
     });
@@ -645,8 +647,8 @@ function renderMiPorra(){
       const pred = draft.ko[leg.id] || {};
       html += `<div class="match-row">
         <div class="team home">${escapeHtml(tie.home)}</div>
-        <input type="number" min="0" max="20" data-koid="${leg.id}" data-side="h" value="${pred.h!=null?pred.h:''}">
-        <input type="number" min="0" max="20" data-koid="${leg.id}" data-side="a" value="${pred.a!=null?pred.a:''}">
+        <input type="number" min="0" max="20" ${dis} data-koid="${leg.id}" data-side="h" value="${pred.h!=null?pred.h:''}">
+        <input type="number" min="0" max="20" ${dis} data-koid="${leg.id}" data-side="a" value="${pred.a!=null?pred.a:''}">
         <div class="team">${escapeHtml(tie.away)} <span class="tag">${leg.label}</span></div>
       </div>`;
     });
@@ -655,46 +657,53 @@ function renderMiPorra(){
   if(!anyUnlocked) html += '<div class="empty">Aún no hay ninguna eliminatoria desbloqueada.</div>';
   html += '</div>';
 
-  html += `<div class="save-bar">
-    <button class="btn secondary" id="saveDraftBtn">💾 Guardar borrador</button>
-    <button class="btn" id="sendFinalBtn">✅ Enviar porra definitiva</button>
-  </div>`;
+  if(locked){
+    html += `<div class="save-bar"><span class="muted">🔒 Porra enviada definitivamente — ya no se puede modificar</span></div>`;
+  } else {
+    html += `<div class="save-bar">
+      <button class="btn secondary" id="saveDraftBtn">💾 Guardar borrador</button>
+      <button class="btn" id="sendFinalBtn">✅ Enviar porra definitiva</button>
+    </div>`;
+  }
 
   el.innerHTML = html;
 
-  document.querySelectorAll('#tab-miporra input[type=number]').forEach(inp=>{
-    inp.addEventListener('input', ()=>{
-      if(inp.dataset.mid){
-        draft.matches[inp.dataset.mid] = draft.matches[inp.dataset.mid] || {};
-        draft.matches[inp.dataset.mid][inp.dataset.side] = inp.value;
-      } else if(inp.dataset.koid){
-        draft.ko[inp.dataset.koid] = draft.ko[inp.dataset.koid] || {};
-        draft.ko[inp.dataset.koid][inp.dataset.side] = inp.value;
-      }
-      scheduleAutosave();
+  if(!locked){
+    document.querySelectorAll('#tab-miporra input[type=number]').forEach(inp=>{
+      inp.addEventListener('input', ()=>{
+        if(inp.dataset.mid){
+          draft.matches[inp.dataset.mid] = draft.matches[inp.dataset.mid] || {};
+          draft.matches[inp.dataset.mid][inp.dataset.side] = inp.value;
+        } else if(inp.dataset.koid){
+          draft.ko[inp.dataset.koid] = draft.ko[inp.dataset.koid] || {};
+          draft.ko[inp.dataset.koid][inp.dataset.side] = inp.value;
+        }
+        scheduleAutosave();
+      });
     });
-  });
-  ['fName','fChampion','fRunnerUp','fLeader','fScorer'].forEach(id=>{
-    const inp = document.getElementById(id);
-    if(inp){
-      inp.addEventListener('input', scheduleAutosave);
-      inp.addEventListener('change', scheduleAutosave);
-    }
-  });
-  document.getElementById('saveDraftBtn').addEventListener('click', ()=>doSave(false));
-  document.getElementById('sendFinalBtn').addEventListener('click', ()=>doSave(true));
+    ['fName','fChampion','fRunnerUp','fLeader','fScorer'].forEach(id=>{
+      const inp = document.getElementById(id);
+      if(inp){
+        inp.addEventListener('input', scheduleAutosave);
+        inp.addEventListener('change', scheduleAutosave);
+      }
+    });
+    document.getElementById('saveDraftBtn').addEventListener('click', ()=>doSave(false));
+    document.getElementById('sendFinalBtn').addEventListener('click', ()=>doSave(true));
+  }
   updateTop8Counter();
   updateSaveStatus();
 }
 
-function teamSelect(id, value){
-  let html = `<select id="${id}"><option value="">-- elegir equipo --</option>`;
+function teamSelect(id, value, disabled){
+  let html = `<select id="${id}" ${disabled?'disabled':''}><option value="">-- elegir equipo --</option>`;
   TEAMS.forEach(t=>{ html += `<option value="${escapeHtml(t)}" ${t===value?'selected':''}>${escapeHtml(t)}</option>`; });
   html += '</select>';
   return html;
 }
 
 function toggleTop8(cb){
+  if(draft && draft.enviada) return; // porra ya enviada: bloqueada
   draft.top8 = draft.top8 || [];
   if(cb.checked){
     if(draft.top8.length>=8){ cb.checked=false; showToast('Máximo 8 equipos'); return; }
@@ -714,7 +723,7 @@ function updateTop8Counter(){
 let autosaveTimer = null;
 
 function scheduleAutosave(){
-  if(!draft) return;
+  if(!draft || draft.enviada) return; // porra ya enviada: bloqueada, no se admiten más cambios
   clearTimeout(autosaveTimer);
   updateSaveStatus('editing');
   autosaveTimer = setTimeout(()=>{ doSave(false, {silent:true}); }, 1500);
@@ -733,7 +742,7 @@ function updateSaveStatus(state){
   const totalTxt = `${countFilledMatches()}/${MATCHES.length} partidos rellenados`;
   let stateTxt;
   if(draft.enviada){
-    stateTxt = '✅ Porra enviada definitivamente';
+    stateTxt = '✅ Porra enviada definitivamente — bloqueada, ya no se puede modificar';
   } else if(state==='saving'){
     stateTxt = '💾 Guardando…';
   } else if(state==='editing'){
@@ -749,6 +758,11 @@ function updateSaveStatus(state){
 async function doSave(finalize, opts){
   opts = opts || {};
   if(!draft) return;
+  if(draft.enviada){
+    // Ya se envió definitivamente: bloqueada, ningún guardado (ni manual ni autoguardado) puede modificarla.
+    if(!opts.silent) showToast('Esta porra ya está enviada y no se puede modificar');
+    return;
+  }
   const nameEl = document.getElementById('fName'); if(nameEl) draft.alias = nameEl.value.trim();
   draft.name = draft.alias;
   const champEl = document.getElementById('fChampion'); if(champEl) draft.champion = champEl.value;
