@@ -97,7 +97,6 @@
 // Rellena aquí la URL de tu Web App de Apps Script cuando la publiques.
 const API_URL = 'https://script.google.com/macros/s/AKfycbxzsWMoSbA_C5DAmvbsKqjf45I7z4s-IDhPvQ4qg0sQtuQHZRc-_RIZ4CAGYCo3-P43/exec';
 
-
 /* ============ DATOS: EQUIPOS Y CALENDARIO FASE DE LIGA ============ */
 const TEAMS = [
   'AEK Athens',
@@ -330,12 +329,26 @@ function koLegIds(tieId){
 }
 
 /* ============ ESTADO ============ */
-let PARTICIPANTS = [];   // [{id,name,alias,matches:{},top8:[],champion,runnerUp,leagueLeader,scorer,ko:{}}]
+let PARTICIPANTS = [];   // [{id,name,alias,matches:{},top8:[],champion,runnerUp,leagueLeader,scorer,ko:{},enviada}]
 let RESULTS = {matches:{}, top8Actual:[], champion:'', runnerUp:'', leagueLeader:'', scorer:'', ko:{}};
 let currentUserId = localStorage_get('ccl_uid') || null;
 let draftKey = 'ccl_draft';
 
-function localStorage_get(k){ try{return null;}catch(e){return null;} } // in-memory only (ver nota abajo)
+// Persistencia real en el navegador: así, si alguien cierra la pestaña a medias
+// (144 partidos son muchos), al volver recupera su porra en el mismo dispositivo.
+function localStorage_get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+function localStorage_set(k, v){ try{ localStorage.setItem(k, v); }catch(e){} }
+
+// Copia local de seguridad del borrador completo, por si falla la conexión con el backend.
+function loadLocalDraft(){
+  try{ const raw = localStorage.getItem(draftKey); return raw ? JSON.parse(raw) : null; }catch(e){ return null; }
+}
+function saveLocalDraft(d){ try{ localStorage.setItem(draftKey, JSON.stringify(d)); }catch(e){} }
+
+// Antes de "enviada" toda porra guardada es un borrador (no cuenta para ranking/predicciones).
+// Las porras guardadas antes de que existiera este campo se tratan como enviadas,
+// para no hacerlas desaparecer retroactivamente.
+function isSubmitted(p){ return p && p.enviada !== false; }
 
 /* ============ NORMALIZACIÓN DE TEXTO (evita el bug de acentos del Mundial) ============ */
 function norm(s){
@@ -417,8 +430,9 @@ async function loadAll(){
     RESULTS = Object.assign({matches:{}, top8Actual:[], champion:'', runnerUp:'', leagueLeader:'', scorer:'', ko:{}}, data.results||{});
     KO = data.ko || KO;
   }
+  const sentCount = PARTICIPANTS.filter(isSubmitted).length;
   document.getElementById('headerSub').textContent =
-    `${PARTICIPANTS.length} participantes · Jornada 1: 8 sep 2026 · Final: 5 jun 2027 (Metropolitano)`;
+    `${sentCount} participantes · Jornada 1: 8 sep 2026 · Final: 5 jun 2027 (Metropolitano)`;
 }
 
 async function savePorra(p){
@@ -447,8 +461,9 @@ function renderTab(tab){
 /* ============ RANKING ============ */
 function renderRanking(){
   const el = document.getElementById('tab-ranking');
-  if(!PARTICIPANTS.length){ el.innerHTML = '<div class="empty">Todavía no hay participantes cargados.</div>'; return; }
-  const rows = PARTICIPANTS.map(p=>({p, r:calcPts(p)})).sort((a,b)=>b.r.total-a.r.total);
+  const sent = PARTICIPANTS.filter(isSubmitted);
+  if(!sent.length){ el.innerHTML = '<div class="empty">Todavía no hay porras enviadas definitivamente.</div>'; return; }
+  const rows = sent.map(p=>({p, r:calcPts(p)})).sort((a,b)=>b.r.total-a.r.total);
   let html = '<div class="card"><h2>Clasificación general</h2><div class="table-scroll"><table><thead><tr><th>#</th><th>Participante</th><th>Liga</th><th>Elim.</th><th>Top8</th><th>Bonus</th><th style="text-align:right">Total</th></tr></thead><tbody>';
   rows.forEach((row,i)=>{
     const medal = i===0?'medal-1':i===1?'medal-2':i===2?'medal-3':'';
@@ -516,9 +531,10 @@ function renderKoBlock(editable, sourceObj, prefix){
 /* ============ PREDICCIONES (ver las de otro participante) ============ */
 function renderPredicciones(){
   const el = document.getElementById('tab-predicciones');
-  if(!PARTICIPANTS.length){ el.innerHTML = '<div class="empty">Todavía no hay participantes cargados.</div>'; return; }
+  const sent = PARTICIPANTS.filter(isSubmitted);
+  if(!sent.length){ el.innerHTML = '<div class="empty">Todavía no hay porras enviadas definitivamente.</div>'; return; }
   let html = '<div class="card"><h2>Ver predicciones</h2><select id="predSelect">';
-  PARTICIPANTS.forEach(p=>{ html += `<option value="${p.id}">${escapeHtml(p.alias||p.name)}</option>`; });
+  sent.forEach(p=>{ html += `<option value="${p.id}">${escapeHtml(p.alias||p.name)}</option>`; });
   html += '</select></div><div id="predBody"></div>';
   el.innerHTML = html;
   document.getElementById('predSelect').addEventListener('change', renderPredBody);
@@ -527,7 +543,8 @@ function renderPredicciones(){
 
 function renderPredBody(){
   const sel = document.getElementById('predSelect');
-  const p = PARTICIPANTS.find(x=>x.id===sel.value) || PARTICIPANTS[0];
+  const sent = PARTICIPANTS.filter(isSubmitted);
+  const p = sent.find(x=>x.id===sel.value) || sent[0];
   if(!p) return;
   const r = calcPts(p);
   let html = `<div class="card">
@@ -562,16 +579,28 @@ function renderPredBody(){
 let draft = null;
 
 function blankParticipant(){
-  return {id:'', name:'', alias:'', matches:{}, top8:[], champion:'', runnerUp:'', leagueLeader:'', scorer:'', ko:{}};
+  return {id:'', name:'', alias:'', matches:{}, top8:[], champion:'', runnerUp:'', leagueLeader:'', scorer:'', ko:{}, enviada:false};
 }
 
 function renderMiPorra(){
   const el = document.getElementById('tab-miporra');
   if(!draft){
     const existing = currentUserId ? PARTICIPANTS.find(p=>p.id===currentUserId) : null;
-    draft = existing ? JSON.parse(JSON.stringify(existing)) : blankParticipant();
+    const local = loadLocalDraft();
+    if(existing){
+      draft = JSON.parse(JSON.stringify(existing));
+    } else if(local && (!currentUserId || local.id===currentUserId)){
+      // No llegó a sincronizarse con el backend (ej. sin conexión) pero quedó guardada en este dispositivo.
+      draft = local;
+      currentUserId = draft.id || currentUserId;
+    } else {
+      draft = blankParticipant();
+    }
+    if(draft.enviada==null) draft.enviada = false;
   }
-  let html = `<div class="card">
+  let html = `<div class="card" id="miPorraStatusCard">
+    <span id="miPorraStatusText" class="muted">Cargando estado…</span>
+  </div><div class="card">
     <h2>Mis datos</h2>
     <label class="field-label">Tu nombre / alias (como aparecerá en el ranking)</label>
     <input type="text" id="fName" value="${escapeHtml(draft.alias||draft.name||'')}" placeholder="Ej: Marcel">
@@ -626,7 +655,10 @@ function renderMiPorra(){
   if(!anyUnlocked) html += '<div class="empty">Aún no hay ninguna eliminatoria desbloqueada.</div>';
   html += '</div>';
 
-  html += `<div class="save-bar"><button class="btn" id="saveBtn">Guardar mi porra</button></div>`;
+  html += `<div class="save-bar">
+    <button class="btn secondary" id="saveDraftBtn">💾 Guardar borrador</button>
+    <button class="btn" id="sendFinalBtn">✅ Enviar porra definitiva</button>
+  </div>`;
 
   el.innerHTML = html;
 
@@ -639,10 +671,20 @@ function renderMiPorra(){
         draft.ko[inp.dataset.koid] = draft.ko[inp.dataset.koid] || {};
         draft.ko[inp.dataset.koid][inp.dataset.side] = inp.value;
       }
+      scheduleAutosave();
     });
   });
-  document.getElementById('saveBtn').addEventListener('click', onSave);
+  ['fName','fChampion','fRunnerUp','fLeader','fScorer'].forEach(id=>{
+    const inp = document.getElementById(id);
+    if(inp){
+      inp.addEventListener('input', scheduleAutosave);
+      inp.addEventListener('change', scheduleAutosave);
+    }
+  });
+  document.getElementById('saveDraftBtn').addEventListener('click', ()=>doSave(false));
+  document.getElementById('sendFinalBtn').addEventListener('click', ()=>doSave(true));
   updateTop8Counter();
+  updateSaveStatus();
 }
 
 function teamSelect(id, value){
@@ -662,26 +704,83 @@ function toggleTop8(cb){
   }
   cb.closest('.team-chip').classList.toggle('checked', cb.checked);
   updateTop8Counter();
+  scheduleAutosave();
 }
 function updateTop8Counter(){
   const c = document.getElementById('top8Counter');
   if(c) c.textContent = `${(draft.top8||[]).length} / 8 seleccionados`;
 }
 
-async function onSave(){
-  draft.alias = document.getElementById('fName').value.trim();
+let autosaveTimer = null;
+
+function scheduleAutosave(){
+  if(!draft) return;
+  clearTimeout(autosaveTimer);
+  updateSaveStatus('editing');
+  autosaveTimer = setTimeout(()=>{ doSave(false, {silent:true}); }, 1500);
+}
+
+function countFilledMatches(){
+  return MATCHES.filter(m=>{
+    const pr = draft.matches[m.id];
+    return pr && pr.h!=='' && pr.h!=null && pr.a!=='' && pr.a!=null;
+  }).length;
+}
+
+function updateSaveStatus(state){
+  const el = document.getElementById('miPorraStatusText');
+  if(!el || !draft) return;
+  const totalTxt = `${countFilledMatches()}/${MATCHES.length} partidos rellenados`;
+  let stateTxt;
+  if(draft.enviada){
+    stateTxt = '✅ Porra enviada definitivamente';
+  } else if(state==='saving'){
+    stateTxt = '💾 Guardando…';
+  } else if(state==='editing'){
+    stateTxt = '✏️ Editando… se guardará solo en unos segundos';
+  } else if(state==='offline'){
+    stateTxt = '⚠️ Sin conexión con el servidor — de momento guardada solo en este dispositivo';
+  } else {
+    stateTxt = '📝 Borrador — se guarda automáticamente. Pulsa "Enviar porra definitiva" cuando esté lista.';
+  }
+  el.textContent = `${stateTxt} · ${totalTxt}`;
+}
+
+async function doSave(finalize, opts){
+  opts = opts || {};
+  if(!draft) return;
+  const nameEl = document.getElementById('fName'); if(nameEl) draft.alias = nameEl.value.trim();
   draft.name = draft.alias;
-  draft.champion = document.getElementById('fChampion').value;
-  draft.runnerUp = document.getElementById('fRunnerUp').value;
-  draft.leagueLeader = document.getElementById('fLeader').value;
-  draft.scorer = document.getElementById('fScorer').value.trim();
-  if(!draft.alias){ showToast('Ponle un nombre a tu porra'); return; }
+  const champEl = document.getElementById('fChampion'); if(champEl) draft.champion = champEl.value;
+  const runEl = document.getElementById('fRunnerUp'); if(runEl) draft.runnerUp = runEl.value;
+  const leadEl = document.getElementById('fLeader'); if(leadEl) draft.leagueLeader = leadEl.value;
+  const scorerEl = document.getElementById('fScorer'); if(scorerEl) draft.scorer = scorerEl.value.trim();
+
+  if(!draft.alias){
+    if(!opts.silent) showToast('Ponle un nombre a tu porra');
+    return;
+  }
   if(!draft.id) draft.id = 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2,7);
   currentUserId = draft.id;
+  localStorage_set('ccl_uid', currentUserId);
+
+  if(finalize) draft.enviada = true;
+
+  saveLocalDraft(draft);
+  updateSaveStatus('saving');
+
   const res = await savePorra(draft);
   const idx = PARTICIPANTS.findIndex(p=>p.id===draft.id);
   if(idx>=0) PARTICIPANTS[idx] = draft; else PARTICIPANTS.push(draft);
-  showToast(res && res.ok ? 'Porra guardada ✔' : 'Guardado localmente (revisa la conexión con la API)');
+
+  if(res && res.ok){
+    updateSaveStatus();
+    if(!opts.silent) showToast(finalize ? 'Porra enviada ✔' : 'Borrador guardado ✔');
+  } else {
+    updateSaveStatus('offline');
+    if(!opts.silent) showToast('Guardado localmente (revisa la conexión con la API)');
+  }
+  return res;
 }
 
 /* ============ UTILIDADES ============ */
