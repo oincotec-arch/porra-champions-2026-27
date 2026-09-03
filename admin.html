@@ -255,7 +255,7 @@ function koLegIds(tieId){
   return [{id:tieId+'_ida', label:'Ida'}, {id:tieId+'_vuelta', label:'Vuelta'}];
 }
 function defaultResults(){
-  return {matches:{}, top8Actual:[], champion:'', runnerUp:'', leagueLeader:'', scorer:'', ko:{}};
+  return {matches:{}, top8Actual:[], champion:'', runnerUp:'', leagueLeader:'', scorer:'', ko:{}, jornadaAbierta:2};
 }
 
 /* ============ ESTADO ============ */
@@ -286,7 +286,7 @@ async function loadAll(){
     KO = (data.ko && data.ko.length) ? data.ko : defaultKo();
   }
   document.getElementById('headerSub').textContent =
-    `${PARTICIPANTS.length} participantes cargados · ${Object.keys(RESULTS.matches||{}).length} / 144 resultados de liga registrados`;
+    `${PARTICIPANTS.length} participantes cargados · ${Object.keys(RESULTS.matches||{}).length} / 144 resultados de liga registrados · Jornadas abiertas: 1–${RESULTS.jornadaAbierta==null?2:RESULTS.jornadaAbierta}`;
 }
 
 async function saveAll(){
@@ -325,7 +325,16 @@ function renderTab(tab){
 /* ============ FASE DE LIGA ============ */
 function renderLiga(){
   const el = document.getElementById('tab-liga');
-  let html = '<div class="card"><h2>Resultados — fase de liga (144 partidos)</h2><p class="muted" style="font-size:.8rem">Deja un partido en blanco si todavía no se ha jugado. Pulsa "Guardar cambios" abajo cuando termines.</p>';
+  if(RESULTS.jornadaAbierta==null) RESULTS.jornadaAbierta = 2;
+  let html = `<div class="card"><h2>Apertura de jornadas</h2>
+    <p class="muted" style="font-size:.8rem">Los participantes solo pueden rellenar hasta esta jornada (y los bonus finales/Top 8). Cuando terminéis una tanda, sube el número para abrir las siguientes.</p>
+    <label class="field-label">Jornadas abiertas para rellenar</label>
+    <select id="jornadaAbiertaSel">`;
+  for(let j=1;j<=8;j++){
+    html += `<option value="${j}" ${RESULTS.jornadaAbierta===j?'selected':''}>Hasta la Jornada ${j}</option>`;
+  }
+  html += `</select></div>`;
+  html += '<div class="card"><h2>Resultados — fase de liga (144 partidos)</h2><p class="muted" style="font-size:.8rem">Deja un partido en blanco si todavía no se ha jugado. Pulsa "Guardar cambios" abajo cuando termines.</p>';
   for(let j=1;j<=8;j++){
     html += `<div class="jornada-title">Jornada ${j}</div>`;
     MATCHES.filter(m=>m.j===j).forEach(m=>{
@@ -340,6 +349,9 @@ function renderLiga(){
   }
   html += '</div>';
   el.innerHTML = html;
+  document.getElementById('jornadaAbiertaSel').addEventListener('change', e=>{
+    RESULTS.jornadaAbierta = Number(e.target.value);
+  });
   el.querySelectorAll('input[type=number]').forEach(inp=>{
     inp.addEventListener('input', ()=>{
       const mid = inp.dataset.mid;
