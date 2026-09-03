@@ -330,7 +330,7 @@ function koLegIds(tieId){
 
 /* ============ ESTADO ============ */
 let PARTICIPANTS = [];   // [{id,name,alias,matches:{},top8:[],champion,runnerUp,leagueLeader,scorer,ko:{},enviada}]
-let RESULTS = {matches:{}, top8Actual:[], champion:'', runnerUp:'', leagueLeader:'', scorer:'', ko:{}};
+let RESULTS = {matches:{}, top8Actual:[], champion:'', runnerUp:'', leagueLeader:'', scorer:'', ko:{}, jornadaAbierta:2};
 let currentUserId = localStorage_get('ccl_uid') || null;
 let draftKey = 'ccl_draft';
 
@@ -348,7 +348,24 @@ function saveLocalDraft(d){ try{ localStorage.setItem(draftKey, JSON.stringify(d
 // Antes de "enviada" toda porra guardada es un borrador (no cuenta para ranking/predicciones).
 // Las porras guardadas antes de que existiera este campo se tratan como enviadas,
 // para no hacerlas desaparecer retroactivamente.
-function isSubmitted(p){ return p && p.enviada !== false; }
+// Con el envío por fases (enviadaHasta), cuenta como enviada en cuanto se ha
+// confirmado al menos la primera tanda de jornadas.
+function isSubmitted(p){
+  if(!p) return false;
+  if(p.enviada) return true;
+  if(p.enviadaHasta) return p.enviadaHasta > 0;
+  return p.enviada !== false;
+}
+
+// Jornada máxima abierta para rellenar (la controla el admin). Por defecto, 2.
+function getOpenLimit(){
+  let n = RESULTS && RESULTS.jornadaAbierta;
+  if(n==null) n = 2;
+  n = Number(n);
+  if(isNaN(n) || n<1) n = 1;
+  if(n>8) n = 8;
+  return n;
+}
 
 /* ============ NORMALIZACIÓN DE TEXTO (evita el bug de acentos del Mundial) ============ */
 function norm(s){
@@ -427,12 +444,12 @@ async function loadAll(){
   const data = await apiCall('getAll', {});
   if(data && data.ok){
     PARTICIPANTS = data.participants || [];
-    RESULTS = Object.assign({matches:{}, top8Actual:[], champion:'', runnerUp:'', leagueLeader:'', scorer:'', ko:{}}, data.results||{});
+    RESULTS = Object.assign({matches:{}, top8Actual:[], champion:'', runnerUp:'', leagueLeader:'', scorer:'', ko:{}, jornadaAbierta:2}, data.results||{});
     KO = data.ko || KO;
   }
   const sentCount = PARTICIPANTS.filter(isSubmitted).length;
   document.getElementById('headerSub').textContent =
-    `${sentCount} participantes · Jornada 1: 8 sep 2026 · Final: 5 jun 2027 (Metropolitano)`;
+    `${sentCount} participantes · Jornadas abiertas: 1–${getOpenLimit()} de 8 · Final: 5 jun 2027 (Metropolitano)`;
 }
 
 async function savePorra(p){
@@ -579,7 +596,7 @@ function renderPredBody(){
 let draft = null;
 
 function blankParticipant(){
-  return {id:'', name:'', alias:'', matches:{}, top8:[], champion:'', runnerUp:'', leagueLeader:'', scorer:'', ko:{}, enviada:false};
+  return {id:'', name:'', alias:'', matches:{}, top8:[], champion:'', runnerUp:'', leagueLeader:'', scorer:'', ko:{}, enviada:false, enviadaHasta:0};
 }
 
 function renderMiPorra(){
@@ -597,22 +614,28 @@ function renderMiPorra(){
       draft = blankParticipant();
     }
     if(draft.enviada==null) draft.enviada = false;
+    if(draft.enviadaHasta==null) draft.enviadaHasta = 0;
   }
-  const locked = !!draft.enviada;
-  const dis = locked ? 'disabled' : '';
+  const fullLocked = !!draft.enviada;          // bloqueo total y definitivo (bonus + liga + eliminatorias)
+  const openLimit = getOpenLimit();             // hasta qué jornada se puede rellenar ahora mismo
+  const sentUpTo = draft.enviadaHasta || 0;     // hasta qué jornada ya se envió en fases anteriores
+  const fullDis = fullLocked ? 'disabled' : ''; // solo se bloquea con el envío total
+  const bonusDis = (fullLocked || sentUpTo>0) ? 'disabled' : ''; // se fija con la 1ª tanda enviada
+  const koDis = fullDis;
+
   let html = `<div class="card" id="miPorraStatusCard">
     <span id="miPorraStatusText" class="muted">Cargando estado…</span>
   </div><div class="card">
     <h2>Mis datos</h2>
     <label class="field-label">Tu nombre / alias (como aparecerá en el ranking)</label>
-    <input type="text" id="fName" ${dis} value="${escapeHtml(draft.alias||draft.name||'')}" placeholder="Ej: Marcel">
+    <input type="text" id="fName" ${fullDis} value="${escapeHtml(draft.alias||draft.name||'')}" placeholder="Ej: Marcel">
   </div>`;
 
   html += `<div class="card"><h2>Bonus finales</h2><div class="bonus-grid">
-    <div><label class="field-label">🏆 Campeón</label>${teamSelect('fChampion', draft.champion, locked)}</div>
-    <div><label class="field-label">🥈 Subcampeón</label>${teamSelect('fRunnerUp', draft.runnerUp, locked)}</div>
-    <div><label class="field-label">📊 Equipo 1º de la fase de liga</label>${teamSelect('fLeader', draft.leagueLeader, locked)}</div>
-    <div><label class="field-label">⚽ Máximo goleador (nombre)</label><input type="text" id="fScorer" ${dis} value="${escapeHtml(draft.scorer||'')}" placeholder="Ej: Mbappe"></div>
+    <div><label class="field-label">🏆 Campeón</label>${teamSelect('fChampion', draft.champion, !!bonusDis)}</div>
+    <div><label class="field-label">🥈 Subcampeón</label>${teamSelect('fRunnerUp', draft.runnerUp, !!bonusDis)}</div>
+    <div><label class="field-label">📊 Equipo 1º de la fase de liga</label>${teamSelect('fLeader', draft.leagueLeader, !!bonusDis)}</div>
+    <div><label class="field-label">⚽ Máximo goleador (nombre)</label><input type="text" id="fScorer" ${bonusDis} value="${escapeHtml(draft.scorer||'')}" placeholder="Ej: Mbappe"></div>
   </div></div>`;
 
   html += `<div class="card"><h2>Top 8 (pase directo a octavos)</h2>
@@ -620,19 +643,28 @@ function renderMiPorra(){
     <div class="top8-grid" id="top8Grid">`;
   TEAMS.forEach(t=>{
     const checked = draft.top8 && draft.top8.includes(t);
-    html += `<label class="team-chip ${checked?'checked':''}"><input type="checkbox" value="${escapeHtml(t)}" ${checked?'checked':''} ${dis} onchange="toggleTop8(this)"> ${escapeHtml(t)}</label>`;
+    html += `<label class="team-chip ${checked?'checked':''}"><input type="checkbox" value="${escapeHtml(t)}" ${checked?'checked':''} ${bonusDis} onchange="toggleTop8(this)"> ${escapeHtml(t)}</label>`;
   });
   html += `</div><div class="counter" id="top8Counter"></div></div>`;
 
   html += '<div class="card"><h2>Marcadores — Fase de liga (144 partidos)</h2>';
+  if(openLimit<8){
+    html += `<p class="muted" style="font-size:.8rem">De momento están abiertas las jornadas 1 a ${openLimit}. Iremos abriendo el resto según avance la fase de liga.</p>`;
+  } else {
+    html += `<p class="muted" style="font-size:.8rem">Ya están abiertas todas las jornadas de la fase de liga.</p>`;
+  }
   for(let j=1;j<=8;j++){
-    html += `<div class="jornada-title">Jornada ${j}</div>`;
+    let tag = '';
+    if(j>openLimit) tag = ' <span class="tag">🔒 aún no abierta</span>';
+    else if(j<=sentUpTo) tag = ' <span class="tag">✅ enviada</span>';
+    html += `<div class="jornada-title">Jornada ${j}${tag}</div>`;
+    const jDis = fullLocked || j<=sentUpTo || j>openLimit;
     MATCHES.filter(m=>m.j===j).forEach(m=>{
       const pred = draft.matches[m.id] || {};
       html += `<div class="match-row">
         <div class="team home">${escapeHtml(m.h)}</div>
-        <input type="number" min="0" max="20" ${dis} data-mid="${m.id}" data-side="h" value="${pred.h!=null?pred.h:''}">
-        <input type="number" min="0" max="20" ${dis} data-mid="${m.id}" data-side="a" value="${pred.a!=null?pred.a:''}">
+        <input type="number" min="0" max="20" ${jDis?'disabled':''} data-mid="${m.id}" data-side="h" value="${pred.h!=null?pred.h:''}">
+        <input type="number" min="0" max="20" ${jDis?'disabled':''} data-mid="${m.id}" data-side="a" value="${pred.a!=null?pred.a:''}">
         <div class="team">${escapeHtml(m.a)}</div>
       </div>`;
     });
@@ -647,8 +679,8 @@ function renderMiPorra(){
       const pred = draft.ko[leg.id] || {};
       html += `<div class="match-row">
         <div class="team home">${escapeHtml(tie.home)}</div>
-        <input type="number" min="0" max="20" ${dis} data-koid="${leg.id}" data-side="h" value="${pred.h!=null?pred.h:''}">
-        <input type="number" min="0" max="20" ${dis} data-koid="${leg.id}" data-side="a" value="${pred.a!=null?pred.a:''}">
+        <input type="number" min="0" max="20" ${koDis} data-koid="${leg.id}" data-side="h" value="${pred.h!=null?pred.h:''}">
+        <input type="number" min="0" max="20" ${koDis} data-koid="${leg.id}" data-side="a" value="${pred.a!=null?pred.a:''}">
         <div class="team">${escapeHtml(tie.away)} <span class="tag">${leg.label}</span></div>
       </div>`;
     });
@@ -657,21 +689,29 @@ function renderMiPorra(){
   if(!anyUnlocked) html += '<div class="empty">Aún no hay ninguna eliminatoria desbloqueada.</div>';
   html += '</div>';
 
-  if(locked){
+  if(fullLocked){
     html += `<div class="save-bar"><span class="muted">🔒 Porra enviada definitivamente — ya no se puede modificar</span></div>`;
   } else {
-    html += `<div class="save-bar">
-      <button class="btn secondary" id="saveDraftBtn">💾 Guardar borrador</button>
-      <button class="btn" id="sendFinalBtn">✅ Enviar porra definitiva</button>
-    </div>`;
+    html += '<div class="save-bar">';
+    html += '<button class="btn secondary" id="saveDraftBtn">💾 Guardar borrador</button>';
+    if(sentUpTo < openLimit){
+      const label = (sentUpTo+1===openLimit) ? `Jornada ${openLimit}` : `Jornadas ${sentUpTo+1}–${openLimit}`;
+      html += `<button class="btn" id="sendPhaseBtn">✅ Enviar ${label} (definitivo)</button>`;
+    }
+    if(sentUpTo>=8){
+      html += `<button class="btn" id="sendFinalBtn">🏁 Enviar porra COMPLETA definitiva</button>`;
+    }
+    html += '</div>';
   }
 
   el.innerHTML = html;
 
-  if(!locked){
+  if(!fullLocked){
     document.querySelectorAll('#tab-miporra input[type=number]').forEach(inp=>{
       inp.addEventListener('input', ()=>{
         if(inp.dataset.mid){
+          const mm = MATCHES.find(x=>x.id===inp.dataset.mid);
+          if(mm && mm.j<=(draft.enviadaHasta||0)) return; // esa jornada ya se envió: bloqueada
           draft.matches[inp.dataset.mid] = draft.matches[inp.dataset.mid] || {};
           draft.matches[inp.dataset.mid][inp.dataset.side] = inp.value;
         } else if(inp.dataset.koid){
@@ -681,15 +721,22 @@ function renderMiPorra(){
         scheduleAutosave();
       });
     });
-    ['fName','fChampion','fRunnerUp','fLeader','fScorer'].forEach(id=>{
+    const bonusInp = id=>{
       const inp = document.getElementById(id);
-      if(inp){
-        inp.addEventListener('input', scheduleAutosave);
-        inp.addEventListener('change', scheduleAutosave);
-      }
-    });
-    document.getElementById('saveDraftBtn').addEventListener('click', ()=>doSave(false));
-    document.getElementById('sendFinalBtn').addEventListener('click', ()=>doSave(true));
+      if(!inp) return;
+      const handler = ()=>{ if((draft.enviadaHasta||0)>0) return; scheduleAutosave(); };
+      inp.addEventListener('input', handler);
+      inp.addEventListener('change', handler);
+    };
+    ['fChampion','fRunnerUp','fLeader','fScorer'].forEach(bonusInp);
+    const nameInp = document.getElementById('fName');
+    if(nameInp){ nameInp.addEventListener('input', scheduleAutosave); nameInp.addEventListener('change', scheduleAutosave); }
+    const saveDraftBtn = document.getElementById('saveDraftBtn');
+    if(saveDraftBtn) saveDraftBtn.addEventListener('click', ()=>doSave('draft'));
+    const sendPhaseBtn = document.getElementById('sendPhaseBtn');
+    if(sendPhaseBtn) sendPhaseBtn.addEventListener('click', ()=>doSave('phase'));
+    const sendFinalBtn = document.getElementById('sendFinalBtn');
+    if(sendFinalBtn) sendFinalBtn.addEventListener('click', ()=>doSave('final'));
   }
   updateTop8Counter();
   updateSaveStatus();
@@ -703,7 +750,7 @@ function teamSelect(id, value, disabled){
 }
 
 function toggleTop8(cb){
-  if(draft && draft.enviada) return; // porra ya enviada: bloqueada
+  if(draft && (draft.enviada || (draft.enviadaHasta||0)>0)) return; // bonus ya enviado: bloqueado
   draft.top8 = draft.top8 || [];
   if(cb.checked){
     if(draft.top8.length>=8){ cb.checked=false; showToast('Máximo 8 equipos'); return; }
@@ -723,10 +770,10 @@ function updateTop8Counter(){
 let autosaveTimer = null;
 
 function scheduleAutosave(){
-  if(!draft || draft.enviada) return; // porra ya enviada: bloqueada, no se admiten más cambios
+  if(!draft || draft.enviada) return; // porra ya enviada del todo: bloqueada, no se admiten más cambios
   clearTimeout(autosaveTimer);
   updateSaveStatus('editing');
-  autosaveTimer = setTimeout(()=>{ doSave(false, {silent:true}); }, 1500);
+  autosaveTimer = setTimeout(()=>{ doSave('draft', {silent:true}); }, 1500);
 }
 
 function countFilledMatches(){
@@ -740,6 +787,8 @@ function updateSaveStatus(state){
   const el = document.getElementById('miPorraStatusText');
   if(!el || !draft) return;
   const totalTxt = `${countFilledMatches()}/${MATCHES.length} partidos rellenados`;
+  const openLimit = getOpenLimit();
+  const sentUpTo = draft.enviadaHasta || 0;
   let stateTxt;
   if(draft.enviada){
     stateTxt = '✅ Porra enviada definitivamente — bloqueada, ya no se puede modificar';
@@ -749,13 +798,18 @@ function updateSaveStatus(state){
     stateTxt = '✏️ Editando… se guardará solo en unos segundos';
   } else if(state==='offline'){
     stateTxt = '⚠️ Sin conexión con el servidor — de momento guardada solo en este dispositivo';
+  } else if(sentUpTo>=openLimit && sentUpTo>0 && openLimit<8){
+    stateTxt = `✅ Enviado hasta la Jornada ${sentUpTo}. Iremos abriendo el resto según avance la fase de liga.`;
+  } else if(sentUpTo>=8){
+    stateTxt = '✅ Fase de liga enviada completa (hasta la Jornada 8). Podrás rellenar las eliminatorias cuando se desbloqueen.';
   } else {
-    stateTxt = '📝 Borrador — se guarda automáticamente. Pulsa "Enviar porra definitiva" cuando esté lista.';
+    stateTxt = `📝 Borrador — se guarda automáticamente. Rellena hasta la Jornada ${openLimit} y pulsa "Enviar" cuando esté lista.`;
   }
   el.textContent = `${stateTxt} · ${totalTxt}`;
 }
 
-async function doSave(finalize, opts){
+async function doSave(mode, opts){
+  // mode: 'draft' (solo guarda), 'phase' (confirma la tanda de jornadas abierta), 'final' (bloqueo total)
   opts = opts || {};
   if(!draft) return;
   if(draft.enviada){
@@ -765,10 +819,12 @@ async function doSave(finalize, opts){
   }
   const nameEl = document.getElementById('fName'); if(nameEl) draft.alias = nameEl.value.trim();
   draft.name = draft.alias;
-  const champEl = document.getElementById('fChampion'); if(champEl) draft.champion = champEl.value;
-  const runEl = document.getElementById('fRunnerUp'); if(runEl) draft.runnerUp = runEl.value;
-  const leadEl = document.getElementById('fLeader'); if(leadEl) draft.leagueLeader = leadEl.value;
-  const scorerEl = document.getElementById('fScorer'); if(scorerEl) draft.scorer = scorerEl.value.trim();
+  if((draft.enviadaHasta||0)===0){
+    const champEl = document.getElementById('fChampion'); if(champEl) draft.champion = champEl.value;
+    const runEl = document.getElementById('fRunnerUp'); if(runEl) draft.runnerUp = runEl.value;
+    const leadEl = document.getElementById('fLeader'); if(leadEl) draft.leagueLeader = leadEl.value;
+    const scorerEl = document.getElementById('fScorer'); if(scorerEl) draft.scorer = scorerEl.value.trim();
+  }
 
   if(!draft.alias){
     if(!opts.silent) showToast('Ponle un nombre a tu porra');
@@ -778,7 +834,8 @@ async function doSave(finalize, opts){
   currentUserId = draft.id;
   localStorage_set('ccl_uid', currentUserId);
 
-  if(finalize) draft.enviada = true;
+  if(mode==='phase') draft.enviadaHasta = getOpenLimit();
+  if(mode==='final') draft.enviada = true;
 
   saveLocalDraft(draft);
   updateSaveStatus('saving');
@@ -789,7 +846,10 @@ async function doSave(finalize, opts){
 
   if(res && res.ok){
     updateSaveStatus();
-    if(!opts.silent) showToast(finalize ? 'Porra enviada ✔' : 'Borrador guardado ✔');
+    if(!opts.silent){
+      const msg = mode==='final' ? 'Porra enviada ✔' : (mode==='phase' ? 'Jornadas enviadas ✔' : 'Borrador guardado ✔');
+      showToast(msg);
+    }
   } else {
     updateSaveStatus('offline');
     if(!opts.silent) showToast('Guardado localmente (revisa la conexión con la API)');
