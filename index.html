@@ -34,14 +34,25 @@
   table{width:100%;border-collapse:collapse;font-size:.85rem;}
   .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
   .table-scroll table{white-space:nowrap;}
-  th,td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--border);}
+  th,td{text-align:left;padding:7px 5px;border-bottom:1px solid var(--border);}
   th{color:var(--muted);font-weight:600;font-size:.75rem;text-transform:uppercase;letter-spacing:.03em;}
   tr.me{background:rgba(255,138,61,.08);}
-  .pos{width:26px;color:var(--muted);font-variant-numeric:tabular-nums;}
+  .pos{width:20px;color:var(--muted);font-variant-numeric:tabular-nums;}
   .pos.medal-1{color:var(--gold);font-weight:800;}
   .pos.medal-2{color:#d9d9d9;font-weight:800;}
   .pos.medal-3{color:#cd8a4e;font-weight:800;}
   .pts{font-weight:800;color:var(--orange2);text-align:right;}
+  .num{text-align:center;width:30px;}
+  .rk-name{display:inline-block;max-width:88px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:middle;}
+  .table-scroll th:last-child,.table-scroll td:last-child{position:sticky;right:0;background:var(--panel);box-shadow:-6px 0 6px -6px rgba(0,0,0,.5);}
+  @media (max-width:420px){
+    th,td{padding:6px 3px;}
+    th{font-size:.62rem;}
+    table{font-size:.78rem;}
+    .rk-name{max-width:64px;}
+    .pos{width:16px;}
+    .num{width:24px;}
+  }
   .jornada-title{font-weight:700;margin:14px 0 8px;color:var(--orange2);font-size:.9rem;}
   .match-row{display:grid;grid-template-columns:1fr 46px 46px 1fr;gap:6px;align-items:center;padding:8px 4px;border-bottom:1px solid var(--border);font-size:.85rem;}
   .match-row input{width:100%;text-align:center;padding:6px 2px;}
@@ -486,11 +497,11 @@ function renderRanking(){
     const medal = i===0?'medal-1':i===1?'medal-2':i===2?'medal-3':'';
     html += `<tr class="${row.p.id===currentUserId?'me':''}">
       <td class="pos ${medal}">${i+1}</td>
-      <td>${escapeHtml(row.p.alias||row.p.name)}</td>
-      <td>${row.r.breakdown.liga}</td>
-      <td>${row.r.breakdown.ko}</td>
-      <td>${row.r.breakdown.top8}</td>
-      <td>${row.r.breakdown.bonus}</td>
+      <td><span class="rk-name">${escapeHtml(row.p.alias||row.p.name)}</span></td>
+      <td class="num">${row.r.breakdown.liga}</td>
+      <td class="num">${row.r.breakdown.ko}</td>
+      <td class="num">${row.r.breakdown.top8}</td>
+      <td class="num">${row.r.breakdown.bonus}</td>
       <td class="pts">${row.r.total}</td>
     </tr>`;
   });
