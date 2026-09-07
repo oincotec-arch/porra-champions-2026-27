@@ -56,6 +56,7 @@
   .jornada-title{font-weight:700;margin:14px 0 8px;color:var(--orange2);font-size:.9rem;}
   .match-row{display:grid;grid-template-columns:1fr 46px 46px 1fr;gap:6px;align-items:center;padding:8px 4px;border-bottom:1px solid var(--border);font-size:.85rem;}
   .match-row input{width:100%;text-align:center;padding:6px 2px;}
+  .match-row .score{display:flex;align-items:center;justify-content:center;background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:6px 2px;font-weight:700;color:var(--text);}
   .match-row .team{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .match-row .team.home{text-align:right;}
   .match-meta{font-size:.7rem;color:var(--muted);text-align:center;margin-bottom:2px;}
@@ -520,8 +521,8 @@ function renderPartidos(){
       const real = RESULTS.matches[m.id];
       html += `<div class="match-row">
         <div class="team home">${escapeHtml(m.h)}</div>
-        <div>${real&&real.h!=null?real.h:'-'}</div>
-        <div>${real&&real.a!=null?real.a:'-'}</div>
+        <div class="score">${real&&real.h!=null?real.h:'-'}</div>
+        <div class="score">${real&&real.a!=null?real.a:'-'}</div>
         <div class="team">${escapeHtml(m.a)}</div>
       </div>`;
     });
@@ -545,8 +546,8 @@ function renderKoBlock(editable, sourceObj, prefix){
         const real = RESULTS.ko[leg.id];
         html += `<div class="match-row ${tie.unlocked?'':'ko-section'}">
           <div class="team home">${tie.unlocked?escapeHtml(tie.home):'?'}</div>
-          <div>${real&&real.h!=null?real.h:'-'}</div>
-          <div>${real&&real.a!=null?real.a:'-'}</div>
+          <div class="score">${real&&real.h!=null?real.h:'-'}</div>
+          <div class="score">${real&&real.a!=null?real.a:'-'}</div>
           <div class="team">${tie.unlocked?escapeHtml(tie.away):'?'} <span class="tag">${leg.label}</span></div>
         </div>`;
       });
@@ -593,8 +594,8 @@ function renderPredBody(){
       const r2 = real ? matchPoints(pred, real) : {pts:0,tag:''};
       html += `<div class="match-row">
         <div class="team home">${escapeHtml(m.h)}</div>
-        <div>${pred&&pred.h!=null&&pred.h!==''?pred.h:'-'}</div>
-        <div>${pred&&pred.a!=null&&pred.a!==''?pred.a:'-'}</div>
+        <div class="score">${pred&&pred.h!=null&&pred.h!==''?pred.h:'-'}</div>
+        <div class="score">${pred&&pred.a!=null&&pred.a!==''?pred.a:'-'}</div>
         <div class="team">${escapeHtml(m.a)} ${real?`<span class="result-badge ${r2.tag}">${r2.pts>0?'+'+r2.pts:'0'}</span>`:''}</div>
       </div>`;
     });
