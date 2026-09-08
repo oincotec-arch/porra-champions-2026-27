@@ -37,6 +37,8 @@
   th,td{text-align:left;padding:7px 5px;border-bottom:1px solid var(--border);}
   th{color:var(--muted);font-weight:600;font-size:.75rem;text-transform:uppercase;letter-spacing:.03em;}
   tr.me{background:rgba(255,138,61,.08);}
+  .table-scroll tbody tr{cursor:pointer;}
+  .table-scroll tbody tr:hover{background:var(--panel2);}
   .pos{width:14px;color:var(--muted);font-variant-numeric:tabular-nums;}
   .pos.medal-1{color:var(--gold);font-weight:800;}
   .pos.medal-2{color:#d9d9d9;font-weight:800;}
@@ -487,6 +489,14 @@ function renderTab(tab){
   if(tab==='miporra') renderMiPorra();
 }
 
+/* Ir desde el ranking directamente a las predicciones de un participante */
+function goToPrediction(pid){
+  const btn = document.querySelector('nav button[data-tab="predicciones"]');
+  if(btn) btn.click();
+  const sel = document.getElementById('predSelect');
+  if(sel){ sel.value = pid; renderPredBody(); }
+}
+
 /* ============ RANKING ============ */
 function renderRanking(){
   const el = document.getElementById('tab-ranking');
@@ -496,7 +506,7 @@ function renderRanking(){
   let html = '<div class="card"><h2>Clasificación general</h2><div class="table-scroll"><table><thead><tr><th>#</th><th>Participante</th><th>Liga</th><th>Elim.</th><th>Top8</th><th>Bonus</th><th style="text-align:right">Total</th></tr></thead><tbody>';
   rows.forEach((row,i)=>{
     const medal = i===0?'medal-1':i===1?'medal-2':i===2?'medal-3':'';
-    html += `<tr class="${row.p.id===currentUserId?'me':''}">
+    html += `<tr class="${row.p.id===currentUserId?'me':''}" data-pid="${row.p.id}" onclick="goToPrediction('${row.p.id}')">
       <td class="pos ${medal}">${i+1}</td>
       <td><span class="rk-name">${escapeHtml(row.p.alias||row.p.name)}</span></td>
       <td class="num">${row.r.breakdown.liga}</td>
