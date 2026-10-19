@@ -346,6 +346,19 @@ function koLegIds(tieId){
 let PARTICIPANTS = [];   // [{id,name,alias,matches:{},top8:[],champion,runnerUp,leagueLeader,scorer,ko:{},enviada}]
 let RESULTS = {matches:{}, top8Actual:[], champion:'', runnerUp:'', leagueLeader:'', scorer:'', ko:{}, jornadaAbierta:2};
 let currentUserId = localStorage_get('ccl_uid') || null;
+// Si la URL trae ?uid=... (enlace personalizado de WhatsApp), identifica siempre a ese participante,
+// sin depender de que el navegador recuerde nada (localStorage puede no persistir en el navegador
+// interno de WhatsApp, modo incognito, u otro dispositivo).
+(function(){
+  try{
+    const params = new URLSearchParams(window.location.search);
+    const uid = params.get('uid');
+    if(uid){
+      currentUserId = uid;
+      localStorage_set('ccl_uid', uid);
+    }
+  }catch(e){}
+})();
 let draftKey = 'ccl_draft';
 
 // Persistencia real en el navegador: así, si alguien cierra la pestaña a medias
